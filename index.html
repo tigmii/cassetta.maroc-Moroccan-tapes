@@ -1171,6 +1171,7 @@ function showPage(id, btn) {
   document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
   document.getElementById('page-'+id).classList.add('active');
   btn.classList.add('active');
+  localStorage.setItem('active_page', id);
 }
 
 // ═══════════════════════════════════════════════
@@ -1199,6 +1200,10 @@ function escReg(s){ return s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'); }
 // INIT
 // ═══════════════════════════════════════════════
 window.addEventListener('DOMContentLoaded', async () => {
+  // Restore last active page
+  const lastPage = localStorage.getItem('active_page') || 'search';
+  const pageBtn = document.querySelector(`.tab[onclick*="'${lastPage}'"]`);
+  if (pageBtn) showPage(lastPage, pageBtn);
   // Pre-fill URL input if saved
   const saved = localStorage.getItem('sheet_url');
   if (saved) {
