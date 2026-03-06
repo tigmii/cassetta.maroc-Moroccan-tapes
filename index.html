@@ -434,6 +434,69 @@ mark{background:rgba(196,65,12,.15);color:var(--acc);border-radius:1px;padding:0
 .col-tile-tags{display:flex;gap:4px;flex-wrap:wrap}
 .col-tile-tags .tag{font-size:8px;padding:1px 5px}
 
+/* ── ARTIST LIST ── */
+.artist-row{
+  display:flex;align-items:center;gap:16px;
+  background:var(--tape);border:1px solid var(--bdr);
+  border-left:3px solid var(--bdr);
+  padding:12px 16px;margin-bottom:6px;
+  cursor:pointer;transition:border-left-color .15s,box-shadow .15s,transform .15s;
+  box-shadow:var(--shadow);
+}
+.artist-row:hover{
+  border-left-color:var(--acc);transform:translateX(2px);
+  box-shadow:var(--shadow-lg);
+}
+.artist-thumb{
+  width:52px;height:52px;flex-shrink:0;
+  overflow:hidden;position:relative;
+  background:var(--s3);
+  display:flex;align-items:center;justify-content:center;
+}
+.artist-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+.artist-thumb-initials{
+  font-family:var(--fb);font-size:20px;letter-spacing:1px;color:var(--faint);
+}
+.artist-info{flex:1;min-width:0}
+.artist-name{
+  font-family:var(--ff);font-size:16px;font-weight:700;
+  color:var(--ink);margin-bottom:2px;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.artist-meta{
+  font-family:var(--fm);font-size:10px;color:var(--mut);
+  display:flex;gap:12px;flex-wrap:wrap;
+}
+.artist-meta span{display:flex;align-items:center;gap:4px}
+.artist-arrow{
+  font-family:var(--fb);font-size:20px;color:var(--faint);
+  flex-shrink:0;transition:color .15s,transform .15s;
+}
+.artist-row:hover .artist-arrow{color:var(--acc);transform:translateX(3px)}
+
+/* ── ARTIST DETAIL ── */
+.col-detail-header{
+  display:flex;align-items:center;gap:16px;
+  padding:0 0 20px;margin-bottom:8px;
+  border-bottom:1px solid var(--bdr);
+}
+.col-back-btn{
+  display:flex;align-items:center;gap:6px;
+  padding:8px 16px;
+  background:var(--tape);border:1px solid var(--bdr);
+  font-family:var(--fm);font-size:10px;letter-spacing:1.5px;text-transform:uppercase;
+  color:var(--mut);cursor:pointer;transition:all .15s;flex-shrink:0;
+}
+.col-back-btn:hover{border-color:var(--acc);color:var(--acc)}
+.col-detail-name{
+  font-family:var(--fb);font-size:clamp(24px,5vw,38px);
+  letter-spacing:2px;color:var(--ink);line-height:1;
+}
+.col-detail-sub{
+  font-family:var(--fm);font-size:10px;color:var(--mut);
+  margin-top:4px;letter-spacing:.5px;
+}
+
 /* ── MOBILE ── */
 @media(max-width:600px){
   .nav{padding:0 10px}
@@ -543,17 +606,31 @@ mark{background:rgba(196,65,12,.15);color:var(--acc);border-radius:1px;padding:0
 
 <!-- ══ COLLECTION PAGE ══ -->
 <div class="page" id="page-collection">
-  <div class="col-header">
-    <div class="sec-title" style="margin:0;flex:1">Full Collection <span id="col-count" style="color:var(--acc);font-size:13px;font-family:var(--fm)"></span></div>
+  <!-- Artist list view -->
+  <div id="col-artists-view">
+    <div class="col-header">
+      <div class="sec-title" style="margin:0;flex:1">Artists <span id="col-count" style="color:var(--acc);font-size:13px;font-family:var(--fm)"></span></div>
+    </div>
+    <div id="col-artists-list"></div>
   </div>
-  <div class="col-grid" id="col-list"></div>
+  <!-- Artist detail view (hidden by default) -->
+  <div id="col-detail-view" style="display:none">
+    <div class="col-detail-header">
+      <button class="col-back-btn" onclick="showArtistList()">← Back</button>
+      <div class="col-detail-meta">
+        <div class="col-detail-name" id="col-detail-name"></div>
+        <div class="col-detail-sub" id="col-detail-sub"></div>
+      </div>
+    </div>
+    <div class="col-grid" id="col-detail-grid"></div>
+  </div>
 </div>
 
 <script>
 // ═══════════════════════════════════════════════════════════
 // CONFIG — your Google Sheet URL is pre-loaded
 // ═══════════════════════════════════════════════════════════
-const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vQ1YCCoP2M9d_QiOHHYyVLXdL_nFAxhuo3cW1c2nl8T1goEYyHtgNnVwyskR6UnowzW7mTv7K9twuy7/pub?output=csv';
+const SHEET_URL = 'https://docs.google.com/spreadsheets/d/1J2Zd-UfGUcKg9VLx1fe7LqvVco_To8ZAN6A_KcHpCk8/pub?output=csv';
 
 const PROXIES = [
   u => `https://corsproxy.io/?${encodeURIComponent(u)}`,
@@ -632,7 +709,7 @@ async function loadData() {
   setSyncState(false);
 
   if (!text) {
-    setStatus('err', '❌ Could not sync. Check your internet connection and try again.');
+    setStatus('err', '❌ Could not load sheet. Make sure the Google Sheet is published: File → Share → Publish to web → CSV, then tap Sync.');
     return;
   }
 
@@ -670,10 +747,26 @@ const isYes    = v => String(v||'').trim().toUpperCase() === 'YES';
 const isPosted = v => String(v||'').trim().toLowerCase() === 'posted';
 const mg = g => g ? String(g).split(/[,\/]/)[0].trim() : '';
 
+// Find artwork column key dynamically (runs once after first row parsed)
+function findArtworkKey(row) {
+  const keys = Object.keys(row);
+  // Log for debugging
+  console.log('Sheet columns:', keys);
+  const match = keys.find(k => /art/i.test(k));
+  return match || '';
+}
+let _artKey = null;
+
 function normalise(r, i) {
+  // Auto-detect artwork column on first record
+  if (i === 0) {
+    _artKey = findArtworkKey(r);
+    console.log('Artwork column detected:', _artKey, '→', r[_artKey]);
+  }
+  const artVal = _artKey ? (r[_artKey]||'').trim() : '';
   return {
     ref:      get(r,'REF','Ref','ref') || (i+1),
-    artist:   get(r,'Artist','ARTIST'),
+    artist:   get(r,'Artist','ARTIST','artist'),
     album:    get(r,'Album_Title','Album / Title','Album','ALBUM'),
     genre:    get(r,'Genre_Category','Genre / Category','Genre','GENRE'),
     label:    get(r,'Label_Notes','Label / Notes','Label','LABEL'),
@@ -683,7 +776,7 @@ function normalise(r, i) {
     instagram:isPosted(get(r,'INSTAGRAM','Instagram')),
     webarchive:isPosted(get(r,'WEBARCHIVE','WebArchive','Web Archive')),
     mainGenre:mg(get(r,'Genre_Category','Genre / Category','Genre')),
-    artwork:  get(r,'ART Work','Art Work','Artwork','ARTWORK','artwork'),
+    artwork:  artVal,
   };
 }
 
@@ -856,11 +949,64 @@ function setGenreFilter(g) {
 
 
 // ═══════════════════════════════════════════════════════════
-// COLLECTION PAGE — GRID WITH ARTWORK
+// COLLECTION PAGE — ARTIST LIST + ALBUM GRID
 // ═══════════════════════════════════════════════════════════
 function renderCollection() {
-  document.getElementById('col-count').textContent = ALL_TAPES.length + ' tapes';
-  document.getElementById('col-list').innerHTML = ALL_TAPES.map(t => colTile(t)).join('');
+  // Group tapes by artist
+  const artistMap = {};
+  ALL_TAPES.forEach(t => {
+    const a = t.artist || 'Unknown';
+    if (!artistMap[a]) artistMap[a] = [];
+    artistMap[a].push(t);
+  });
+  const artists = Object.keys(artistMap).sort((a,b) => a.localeCompare(b));
+  document.getElementById('col-count').textContent = artists.length + ' artists · ' + ALL_TAPES.length + ' tapes';
+
+  document.getElementById('col-artists-list').innerHTML = artists.map(name => {
+    const tapes = artistMap[name];
+    const thumb = tapes.find(t => t.artwork)?.artwork || '';
+    const initials = name.split(/\s+/).map(w=>w[0]).join('').toUpperCase().slice(0,2);
+    const digCount = tapes.filter(t=>t.digitized).length;
+    const genres = [...new Set(tapes.map(t=>t.mainGenre).filter(Boolean))].slice(0,2).join(', ');
+    return `
+      <div class="artist-row" onclick="showArtist('${esc(name).replace(/'/g,"\\'")}')">
+        <div class="artist-thumb">
+          ${thumb
+            ? `<img src="${esc(thumb)}" alt="" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
+               <span class="artist-thumb-initials" style="display:none">${initials}</span>`
+            : `<span class="artist-thumb-initials">${initials}</span>`
+          }
+        </div>
+        <div class="artist-info">
+          <div class="artist-name">${esc(name)}</div>
+          <div class="artist-meta">
+            <span>📼 ${tapes.length} tape${tapes.length!==1?'s':''}</span>
+            ${digCount ? `<span>✓ ${digCount} digitized</span>` : ''}
+            ${genres ? `<span>${esc(genres)}</span>` : ''}
+          </div>
+        </div>
+        <div class="artist-arrow">›</div>
+      </div>`;
+  }).join('');
+}
+
+function showArtist(name) {
+  const tapes = ALL_TAPES.filter(t => t.artist === name);
+  const digCount = tapes.filter(t=>t.digitized).length;
+  document.getElementById('col-detail-name').textContent = name;
+  document.getElementById('col-detail-sub').textContent =
+    `${tapes.length} tape${tapes.length!==1?'s':''} · ${digCount} digitized`;
+  document.getElementById('col-detail-grid').innerHTML = tapes.map(t => colTile(t)).join('');
+  document.getElementById('col-artists-view').style.display = 'none';
+  document.getElementById('col-detail-view').style.display = 'block';
+  // Scroll to top of collection page
+  document.getElementById('page-collection').scrollTop = 0;
+  window.scrollTo(0, 0);
+}
+
+function showArtistList() {
+  document.getElementById('col-detail-view').style.display = 'none';
+  document.getElementById('col-artists-view').style.display = 'block';
 }
 
 function colTile(t) {
@@ -875,7 +1021,8 @@ function colTile(t) {
   ].filter(Boolean).slice(0,3).join('');
 
   const artInner = t.artwork
-    ? `<img src="${esc(t.artwork)}" alt="${esc(t.artist)}" loading="lazy" class="loaded" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"  />
+    ? `<img src="${esc(t.artwork)}" alt="${esc(t.album||t.artist)}" loading="lazy" class="loaded"
+         onerror="this.style.display='none';this.nextElementSibling.style.display='flex'" />
        <div class="col-art-placeholder" style="display:none">
          <span class="art-initials">${initials}</span>
          <span class="art-ref">#${t.ref}</span>
@@ -892,12 +1039,13 @@ function colTile(t) {
         <div class="col-art-status" style="background:${statusColor}"></div>
       </div>
       <div class="col-tile-info">
-        <div class="col-tile-artist" title="${esc(t.artist)}">${esc(t.artist)}</div>
-        <div class="col-tile-album" title="${esc(t.album||'—')}">${esc(t.album||'—')}</div>
+        <div class="col-tile-artist" title="${esc(t.album||'—')}">${esc(t.album||'—')}</div>
+        <div class="col-tile-album" title="${esc(t.label||'')}">${esc(t.label||'')}</div>
         <div class="col-tile-tags">${tags}</div>
       </div>
     </div>`;
 }
+
 
 
 
