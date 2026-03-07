@@ -529,6 +529,48 @@ mark { background:rgba(34,197,94,.2); color:var(--acc); border-radius:2px; paddi
 }
 .shake { animation:shake .4s ease; }
 
+/* ── COLLECTION MODE TOGGLE ── */
+.col-mode-bar {
+  display:flex; gap:8px; margin-bottom:24px;
+}
+.col-mode-btn {
+  display:flex; align-items:center; gap:7px;
+  padding:9px 18px; border-radius:8px;
+  background:var(--s2); border:1px solid var(--bdr);
+  color:var(--mut); font-family:var(--fm); font-size:10px;
+  letter-spacing:1px; text-transform:uppercase;
+  cursor:pointer; transition:all .2s;
+}
+.col-mode-btn:hover { border-color:var(--bdr2); color:var(--txt); }
+.col-mode-btn.active { background:var(--accd); border-color:var(--acc); color:var(--acc); }
+
+/* ── LABEL GRID ── */
+.label-grid {
+  display:grid;
+  grid-template-columns:repeat(auto-fill, minmax(200px,1fr));
+  gap:10px;
+}
+.label-card {
+  background:var(--s1); border:1px solid var(--bdr);
+  border-radius:var(--r); padding:18px 20px;
+  cursor:pointer; transition:all .2s;
+  display:flex; align-items:center; gap:14px;
+}
+.label-card:hover { border-color:var(--acc); transform:translateY(-2px); box-shadow:var(--sh); }
+.label-card-icon {
+  width:40px; height:40px; border-radius:8px; flex-shrink:0;
+  background:var(--accd); border:1px solid rgba(34,197,94,.2);
+  display:flex; align-items:center; justify-content:center;
+  font-size:18px;
+}
+.label-card-info { min-width:0; }
+.label-card-name {
+  font-size:13px; font-weight:600; color:var(--txt);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  margin-bottom:3px;
+}
+.label-card-meta { font-family:var(--fm); font-size:10px; color:var(--mut); }
+
 /* ── LETTER FILTER BAR ── */
 .letter-bar {
   display:flex; flex-wrap:wrap; gap:4px;
@@ -794,23 +836,75 @@ img { -webkit-user-drag:none; user-drag:none; pointer-events:none; }
 
 <!-- ══ COLLECTION ══ -->
 <div class="page" id="page-collection">
-  <div id="col-artists-view">
-    <div style="display:flex;align-items:center;margin-bottom:16px">
-      <div class="sec-title" style="margin:0;flex:1">Artists <span class="col-count-badge" id="col-count"></span></div>
-    </div>
-    <div class="letter-bar" id="letter-bar"></div>
-    <div class="artist-grid" id="col-artists-list"></div>
+
+  <!-- ── VIEW MODE TOGGLE ── -->
+  <div class="col-mode-bar">
+    <button class="col-mode-btn active" id="mode-btn-artist" onclick="switchColMode('artist')">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="9" cy="7" r="4"/><path d="M3 21v-2a4 4 0 0 1 4-4h4a4 4 0 0 1 4 4v2"/><circle cx="19" cy="7" r="2"/><path d="M23 21v-1a2 2 0 0 0-2-2h-2"/></svg>
+      By Artist
+    </button>
+    <button class="col-mode-btn" id="mode-btn-label" onclick="switchColMode('label')">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z"/><line x1="7" y1="7" x2="7.01" y2="7"/></svg>
+      By Label
+    </button>
   </div>
-  <div id="col-detail-view" style="display:none">
-    <div class="col-detail-header">
-      <button class="col-back-btn" onclick="showArtistList()">← Artists</button>
-      <div>
-        <div class="col-detail-name" id="col-detail-name"></div>
-        <div class="col-detail-sub" id="col-detail-sub"></div>
+
+  <!-- ── ARTIST MODE ── -->
+  <div id="col-mode-artist">
+    <div id="col-artists-view">
+      <div style="display:flex;align-items:center;margin-bottom:16px">
+        <div class="sec-title" style="margin:0;flex:1">Artists <span class="col-count-badge" id="col-count"></span></div>
+      </div>
+      <div class="letter-bar" id="letter-bar"></div>
+      <div class="artist-grid" id="col-artists-list"></div>
+    </div>
+    <div id="col-detail-view" style="display:none">
+      <div class="col-detail-header">
+        <button class="col-back-btn" onclick="showArtistList()">← Artists</button>
+        <div>
+          <div class="col-detail-name" id="col-detail-name"></div>
+          <div class="col-detail-sub" id="col-detail-sub"></div>
+        </div>
+      </div>
+      <div class="col-grid" id="col-detail-grid"></div>
+    </div>
+  </div>
+
+  <!-- ── LABEL MODE ── -->
+  <div id="col-mode-label" style="display:none">
+    <!-- Label list -->
+    <div id="col-label-list-view">
+      <div style="display:flex;align-items:center;margin-bottom:16px">
+        <div class="sec-title" style="margin:0;flex:1">Labels <span class="col-count-badge" id="col-label-count"></span></div>
+      </div>
+      <div class="label-grid" id="col-label-list"></div>
+    </div>
+    <!-- Label → artists view -->
+    <div id="col-label-artists-view" style="display:none">
+      <div class="col-detail-header">
+        <button class="col-back-btn" onclick="showLabelList()">← Labels</button>
+        <div>
+          <div class="col-detail-name" id="col-label-name"></div>
+          <div class="col-detail-sub" id="col-label-sub"></div>
+        </div>
+      </div>
+      <!-- Artists for this label -->
+      <div class="sec-title" style="margin:16px 0 12px">Artists</div>
+      <div class="artist-grid" id="col-label-artists-grid"></div>
+      <!-- Tapes for selected artist inside label -->
+      <div id="col-label-artist-tapes" style="display:none">
+        <div class="col-detail-header" style="margin-top:24px">
+          <button class="col-back-btn" onclick="hideLabelArtistTapes()">← Artists</button>
+          <div>
+            <div class="col-detail-name" id="col-label-artist-name"></div>
+            <div class="col-detail-sub" id="col-label-artist-sub"></div>
+          </div>
+        </div>
+        <div class="col-grid" id="col-label-artist-grid"></div>
       </div>
     </div>
-    <div class="col-grid" id="col-detail-grid"></div>
   </div>
+
 </div>
 
 <!-- ══ ADMIN LOGIN MODAL ══ -->
@@ -1311,9 +1405,130 @@ function renderArtistGrid(map, artists) {
   }).join('');
 }
 
+// ═══════════════════════════════════════════════
+// COLLECTION MODE SWITCH
+// ═══════════════════════════════════════════════
+let _colMode = 'artist';
+
+function switchColMode(mode) {
+  _colMode = mode;
+  document.getElementById('col-mode-artist').style.display = mode === 'artist' ? '' : 'none';
+  document.getElementById('col-mode-label').style.display  = mode === 'label'  ? '' : 'none';
+  document.getElementById('mode-btn-artist').classList.toggle('active', mode === 'artist');
+  document.getElementById('mode-btn-label').classList.toggle('active',  mode === 'label');
+  if (mode === 'label') renderLabels();
+}
+
+// ═══════════════════════════════════════════════
+// LABEL MODE
+// ═══════════════════════════════════════════════
+function renderLabels() {
+  // Build label → tapes map
+  const lmap = {};
+  ALL_TAPES.forEach(t => {
+    const l = (t.label||'').trim() || 'Unknown';
+    if (!lmap[l]) lmap[l] = [];
+    lmap[l].push(t);
+  });
+  const labels = Object.keys(lmap).sort((a,b) => a.localeCompare(b));
+  document.getElementById('col-label-count').textContent = labels.length + ' labels · ' + ALL_TAPES.length + ' tapes';
+
+  document.getElementById('col-label-list').innerHTML = labels.map(name => {
+    const tapes = lmap[name];
+    const artists = [...new Set(tapes.map(t=>t.artist).filter(Boolean))];
+    const digCount = tapes.filter(t=>t.digitized).length;
+    const safe = name.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    return `
+      <div class="label-card" onclick="showLabel('${safe}')">
+        <div class="label-card-icon">🏷</div>
+        <div class="label-card-info">
+          <div class="label-card-name" title="${esc(name)}">${esc(name)}</div>
+          <div class="label-card-meta">
+            ${tapes.length} tape${tapes.length!==1?'s':''} · ${artists.length} artist${artists.length!==1?'s':''}
+            ${digCount ? ` · <span style="color:var(--acc)">✓${digCount}</span>` : ''}
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+
+  document.getElementById('col-label-list-view').style.display = '';
+  document.getElementById('col-label-artists-view').style.display = 'none';
+}
+
+function showLabel(labelName) {
+  const tapes = ALL_TAPES.filter(t => (t.label||'').trim() === labelName || (!t.label && labelName === 'Unknown'));
+  const artistMap = {};
+  tapes.forEach(t => {
+    const a = t.artist||'Unknown';
+    if (!artistMap[a]) artistMap[a] = [];
+    artistMap[a].push(t);
+  });
+  const artists = Object.keys(artistMap).sort((a,b) => a.localeCompare(b));
+
+  document.getElementById('col-label-name').textContent = labelName;
+  document.getElementById('col-label-sub').textContent =
+    `${tapes.length} tape${tapes.length!==1?'s':''} · ${artists.length} artist${artists.length!==1?'s':''}`;
+
+  // Render artist grid for this label
+  document.getElementById('col-label-artists-grid').innerHTML = artists.map(name => {
+    const at = artistMap[name];
+    const raw = at.find(t=>t.artwork)?.artwork || '';
+    const thumb = fixArtUrl(raw);
+    const initials = name.split(/\s+/).map(w=>w[0]).join('').toUpperCase().slice(0,2);
+    const digCount = at.filter(t=>t.digitized).length;
+    const safe = name.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    const lsafe = labelName.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+    return `
+      <div class="artist-card" onclick="showLabelArtist('${safe}','${lsafe}')">
+        <div class="artist-card-art">
+          ${thumb
+            ? `<img src="${esc(thumb)}" alt="" loading="lazy" onerror="this.parentElement.innerHTML='<div class=\\'artist-card-placeholder\\'><span class=\\'artist-card-initials\\'>${initials}</span></div>'">`
+            : `<div class="artist-card-placeholder"><span class="artist-card-initials">${initials}</span><span class="artist-card-count">${at.length} tape${at.length!==1?'s':''}</span></div>`}
+        </div>
+        <div class="artist-card-info">
+          <div class="artist-card-name" title="${esc(name)}">${esc(name)}</div>
+          <div class="artist-card-meta">
+            <span>${at.length} tape${at.length!==1?'s':''}</span>
+            ${digCount?`<span style="color:var(--acc)">✓${digCount}</span>`:''}
+          </div>
+        </div>
+      </div>`;
+  }).join('');
+
+  // Hide tapes sub-view
+  document.getElementById('col-label-artist-tapes').style.display = 'none';
+
+  document.getElementById('col-label-list-view').style.display = 'none';
+  document.getElementById('col-label-artists-view').style.display = '';
+  window.scrollTo(0,0);
+}
+
+function showLabelArtist(artistName, labelName) {
+  const tapes = ALL_TAPES.filter(t =>
+    t.artist === artistName &&
+    ((t.label||'').trim() === labelName || (!t.label && labelName === 'Unknown'))
+  );
+  document.getElementById('col-label-artist-name').textContent = artistName;
+  document.getElementById('col-label-artist-sub').textContent =
+    `${tapes.length} tape${tapes.length!==1?'s':''} on ${labelName}`;
+  document.getElementById('col-label-artist-grid').innerHTML = tapes.map(t => colTile(t)).join('');
+  document.getElementById('col-label-artist-tapes').style.display = '';
+  document.getElementById('col-label-artist-tapes').scrollIntoView({behavior:'smooth', block:'start'});
+}
+
+function hideLabelArtistTapes() {
+  document.getElementById('col-label-artist-tapes').style.display = 'none';
+}
+
+function showLabelList() {
+  document.getElementById('col-label-artists-view').style.display = 'none';
+  document.getElementById('col-label-list-view').style.display = '';
+  window.scrollTo(0,0);
+}
+
+
 function showArtist(name) {
   const tapes = ALL_TAPES.filter(t => t.artist === name);
-  document.getElementById('col-detail-name').textContent = name;
   document.getElementById('col-detail-sub').textContent = `${tapes.length} tape${tapes.length!==1?'s':''} · ${tapes.filter(t=>t.digitized).length} digitized`;
   document.getElementById('col-detail-grid').innerHTML = tapes.map(t => colTile(t)).join('');
   document.getElementById('col-artists-view').style.display = 'none';
