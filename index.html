@@ -882,6 +882,7 @@ img { -webkit-user-drag:none; user-drag:none; pointer-events:none; }
       <div class="cal-grid" id="cal-grid"></div>
     </div>
     <div class="cal-summary" id="cal-summary"></div>
+    <div id="cal-debug" style="margin-top:12px;padding:10px 12px;background:rgba(250,204,21,.06);border:1px solid rgba(250,204,21,.2);border-radius:6px;font-family:var(--fm);font-size:10px;color:#facc15;line-height:1.8;display:none"></div>
   </div>
   <div id="cal-tooltip" class="cal-tooltip"></div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
@@ -1213,7 +1214,7 @@ function normalise(r, i) {
     console.log('🖼 Artwork column:', JSON.stringify(_artKey), '→', r[_artKey]);
     // Log date column for debugging
     const dateVal = get(r,'date','Date','DATE','date added','Date Added');
-    console.log('📅 Date column sample:', JSON.stringify(dateVal));
+    console.log('📅 Date column sample:', JSON.stringify(get(r,'dates','date','Date','Dates')));
   }
   const artist = _artistKey ? (r[_artistKey]||'').trim() : get(r,'Artist','Artiste','ARTIST','artiste');
   return {
@@ -1229,7 +1230,7 @@ function normalise(r, i) {
     webarchive:isPosted(get(r,'WebArchive','Web Archive','WEBARCHIVE','Archive')),
     mainGenre: mg(get(r,'Genre','Genre_Category','Genre / Category','GENRE','Style')),
     artwork:   _artKey ? (r[_artKey]||'').trim() : '',
-    date:      get(r,'date','Date','DATE','date added','Date Added','created','Created').trim(),
+    date:      get(r,'dates','date','Date','Dates','DATE','date added','Date Added','created','Created').trim(),
   };
 }
 
@@ -1720,10 +1721,28 @@ function drawDonut(segs,total,pct) {
 // CALENDAR — tape additions over time
 // ═══════════════════════════════════════════════
 function renderCalendar() {
+  // ── Debug: show all column keys from first tape ──
+  const firstTape = ALL_TAPES[0] || {};
+  const allKeys = Object.keys(firstTape);
+
+  // Find what the date field actually contains
+  const rawDateSamples = ALL_TAPES.slice(0, 5).map(t => t.date || '(empty)');
+  const dateColInSheet = ALL_TAPES.slice(0, 5).map(t => {
+    // Also check the raw row if accessible
+    return t.date;
+  });
+
+  // Show debug box
+  const dbg = document.getElementById('cal-debug');
+  dbg.style.display = 'block';
+  dbg.innerHTML = `
+    <b>🔍 Debug — Column keys found:</b> ${allKeys.map(k=>`<code style="background:rgba(255,255,255,.08);padding:1px 4px;border-radius:3px">${k}</code>`).join(' ')}<br>
+    <b>📅 t.date values (first 5 rows):</b> ${rawDateSamples.map(v=>`<code style="background:rgba(255,255,255,.08);padding:1px 4px;border-radius:3px">${v}</code>`).join(' ')}
+  `;
+
   // ── Build date → count map ──
   const dateMap = {};
   let hasRealDates = false;
-  let sampleDates = [];
 
   ALL_TAPES.forEach((t, i) => {
     const raw = (t.date || '').trim();
@@ -1733,7 +1752,6 @@ function renderCalendar() {
       hasRealDates = true;
       const k = fmtKey(d);
       dateMap[k] = (dateMap[k] || 0) + 1;
-      if (sampleDates.length < 3) sampleDates.push(raw + ' → ' + k);
     } else {
       // Fallback: spread evenly across last 12 months by index
       const base = Date.now() - 365 * 86400000;
@@ -1742,17 +1760,14 @@ function renderCalendar() {
     }
   });
 
-  console.log('📅 Calendar — hasRealDates:', hasRealDates, '| entries:', Object.keys(dateMap).length, '| sample dates:', sampleDates);
+  if (hasRealDates) dbg.style.display = 'none'; // hide debug once working
 
   // ── Build 52-week grid ending today ──
   const today = new Date(); today.setHours(0,0,0,0);
-
-  // Find the Sunday at or before 52 weeks ago
   const msAgo52 = new Date(+today - 52 * 7 * 86400000);
-  const dayOfWeek = msAgo52.getDay(); // 0=Sun
+  const dayOfWeek = msAgo52.getDay();
   const gridStart = new Date(+msAgo52 - dayOfWeek * 86400000);
 
-  // Build all days from gridStart to today grouped into weeks
   const weeks = [];
   let cur = new Date(gridStart);
   while (+cur <= +today) {
@@ -1765,20 +1780,19 @@ function renderCalendar() {
     weeks.push(week);
   }
 
-  // ── Month label row (aligned to week columns) ──
+  // ── Month label row ──
   const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   const DAYS   = ['S','M','T','W','T','F','S'];
   let lastMonth = -1;
-  let monthsHtml = '<div class="cal-months-cell"></div>'; // spacer for day-label column
+  let monthsHtml = '<div class="cal-months-cell"></div>';
   weeks.forEach(week => {
     const m = week[0].date.getMonth();
-    const show = m !== lastMonth;
-    monthsHtml += `<div class="cal-months-cell">${show ? MONTHS[m] : ''}</div>`;
-    if (show) lastMonth = m;
+    monthsHtml += `<div class="cal-months-cell">${m !== lastMonth ? MONTHS[m] : ''}</div>`;
+    if (m !== lastMonth) lastMonth = m;
   });
   document.getElementById('cal-months').innerHTML = monthsHtml;
 
-  // ── Grid: day-label column + week columns ──
+  // ── Grid ──
   let gridHtml = '<div class="cal-week">';
   DAYS.forEach(d => { gridHtml += `<div class="cal-day-label">${d}</div>`; });
   gridHtml += '</div>';
@@ -1787,11 +1801,11 @@ function renderCalendar() {
     gridHtml += '<div class="cal-week">';
     week.forEach(day => {
       const isFuture = day.date > today;
-      const bg = isFuture     ? 'transparent'
-        : day.count === 0     ? 'var(--s3)'
-        : day.count === 1     ? 'rgba(34,197,94,.3)'
-        : day.count <= 3      ? 'rgba(34,197,94,.55)'
-        : day.count <= 6      ? 'rgba(34,197,94,.8)'
+      const bg = isFuture         ? 'transparent'
+        : day.count === 0         ? 'var(--s3)'
+        : day.count === 1         ? 'rgba(34,197,94,.3)'
+        : day.count <= 3          ? 'rgba(34,197,94,.55)'
+        : day.count <= 6          ? 'rgba(34,197,94,.8)'
         : 'var(--acc)';
       const lbl = day.date.toLocaleDateString('en-GB', {day:'numeric', month:'short', year:'numeric'});
       gridHtml += `<div class="cal-day" style="background:${bg}"
@@ -1801,28 +1815,20 @@ function renderCalendar() {
   });
   document.getElementById('cal-grid').innerHTML = gridHtml;
 
-  // ── Summary bar ──
+  // ── Summary ──
   const nowY = today.getFullYear(), nowM = today.getMonth();
   const activeDays = Object.values(dateMap).filter(v => v > 0).length;
-  const thisYear   = Object.entries(dateMap)
-    .filter(([k]) => new Date(k).getFullYear() === nowY)
-    .reduce((a, [, v]) => a + v, 0);
-  const thisMonth  = Object.entries(dateMap)
-    .filter(([k]) => { const d = new Date(k); return d.getFullYear() === nowY && d.getMonth() === nowM; })
-    .reduce((a, [, v]) => a + v, 0);
-  const peak = Object.entries(dateMap).sort((a, b) => b[1] - a[1])[0];
-  const peakStr = peak
-    ? `${peak[1]} on ${new Date(peak[0]).toLocaleDateString('en-GB', {day:'numeric',month:'short',year:'numeric'})}`
-    : '—';
+  const thisYear   = Object.entries(dateMap).filter(([k]) => new Date(k).getFullYear() === nowY).reduce((a,[,v]) => a+v, 0);
+  const thisMonth  = Object.entries(dateMap).filter(([k]) => { const d=new Date(k); return d.getFullYear()===nowY && d.getMonth()===nowM; }).reduce((a,[,v]) => a+v, 0);
+  const peak = Object.entries(dateMap).sort((a,b) => b[1]-a[1])[0];
+  const peakStr = peak ? `${peak[1]} on ${new Date(peak[0]).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})}` : '—';
 
   document.getElementById('cal-summary').innerHTML = [
     `<span><b>${thisMonth}</b> this month</span>`,
     `<span><b>${thisYear}</b> this year</span>`,
     `<span><b>${activeDays}</b> active days</span>`,
     `<span>Peak: <b>${peakStr}</b></span>`,
-    !hasRealDates
-      ? `<span style="color:var(--org)">⚠ No dates read from sheet yet — check your <b>date</b> column or open console for debug info.</span>`
-      : '',
+    !hasRealDates ? `<span style="color:var(--org)">⚠ Dates not parsed yet — see debug info below</span>` : '',
   ].filter(Boolean).join('');
 }
 
@@ -1835,26 +1841,27 @@ function parseDate(str) {
   str = str.trim();
   if (!str) return null;
 
-  // ISO: 2024-01-15 or 2024/01/15
+  // M/D/YYYY or M/D/YY — Google Sheets US format e.g. "3/8/2026"
+  let m = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{2,4})$/);
+  if (m) {
+    const y = m[3].length === 2 ? '20' + m[3] : m[3];
+    const d = new Date(`${y}-${m[1].padStart(2,'0')}-${m[2].padStart(2,'0')}`);
+    if (!isNaN(d) && d.getFullYear() > 2000) return d;
+  }
+
+  // ISO: 2026-03-08
   let d = new Date(str.replace(/\//g, '-'));
   if (!isNaN(d) && d.getFullYear() > 2000) return d;
 
-  // DD/MM/YYYY or DD-MM-YYYY or DD.MM.YYYY
-  let m = str.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2,4})$/);
+  // DD/MM/YYYY or DD-MM-YYYY
+  m = str.match(/^(\d{1,2})[-\.](\d{1,2})[-\.](\d{2,4})$/);
   if (m) {
     const y = m[3].length === 2 ? '20' + m[3] : m[3];
     d = new Date(`${y}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`);
-    if (!isNaN(d)) return d;
+    if (!isNaN(d) && d.getFullYear() > 2000) return d;
   }
 
-  // MM/DD/YYYY (US format)
-  m = str.match(/^(\d{1,2})\/(\d{1,2})\/(\d{4})$/);
-  if (m) {
-    d = new Date(`${m[3]}-${m[1].padStart(2,'0')}-${m[2].padStart(2,'0')}`);
-    if (!isNaN(d)) return d;
-  }
-
-  // "15 Jan 2024" or "15 January 2024"
+  // Natural language: "8 Mar 2026", "March 8 2026"
   d = new Date(str);
   if (!isNaN(d) && d.getFullYear() > 2000) return d;
 
