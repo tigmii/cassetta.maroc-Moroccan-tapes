@@ -529,6 +529,53 @@ mark { background:rgba(34,197,94,.2); color:var(--acc); border-radius:2px; paddi
 }
 .shake { animation:shake .4s ease; }
 
+/* ── CONTRIBUTION CALENDAR ── */
+.cal-card { overflow:hidden; position:relative; padding:16px 20px 20px; }
+.cal-header {
+  display:flex; align-items:center; justify-content:flex-end;
+  margin-bottom:10px;
+}
+.cal-legend-wrap { display:flex; align-items:center; gap:4px; }
+.cal-legend-label { font-family:var(--fm); font-size:9px; color:var(--mut); }
+.cal-legend-cell { width:11px; height:11px; border-radius:2px; }
+.cal-scroll-wrap { overflow-x:auto; padding-bottom:4px; }
+.cal-months {
+  display:flex; margin-left:28px; margin-bottom:4px;
+  font-family:var(--fm); font-size:9px; color:var(--mut);
+}
+.cal-month-label { flex-shrink:0; }
+.cal-grid {
+  display:flex; gap:3px; align-items:flex-start;
+}
+.cal-week {
+  display:flex; flex-direction:column; gap:3px;
+}
+.cal-day {
+  width:12px; height:12px; border-radius:2px;
+  cursor:pointer; transition:transform .1s, box-shadow .1s;
+  flex-shrink:0; position:relative;
+}
+.cal-day:hover { transform:scale(1.4); box-shadow:0 0 0 1px rgba(255,255,255,.3); z-index:10; }
+.cal-day-label {
+  width:12px; height:12px; border-radius:2px;
+  display:flex; align-items:center; justify-content:center;
+  font-family:var(--fm); font-size:7px; color:var(--mut);
+  flex-shrink:0;
+}
+.cal-tooltip {
+  position:absolute; background:var(--s4); border:1px solid var(--bdr2);
+  border-radius:6px; padding:6px 10px;
+  font-family:var(--fm); font-size:10px; color:var(--txt);
+  pointer-events:none; display:none; z-index:100;
+  white-space:nowrap; box-shadow:var(--sh);
+}
+.cal-summary {
+  margin-top:14px; padding-top:12px; border-top:1px solid var(--bdr);
+  display:flex; gap:20px; flex-wrap:wrap;
+  font-family:var(--fm); font-size:10px; color:var(--mut);
+}
+.cal-summary span b { color:var(--acc); }
+
 /* ── COLLECTION MODE TOGGLE ── */
 .col-mode-bar {
   display:flex; gap:8px; margin-bottom:24px;
@@ -814,6 +861,26 @@ img { -webkit-user-drag:none; user-drag:none; pointer-events:none; }
     <div class="prog-big" id="pct-big">—</div>
     <div class="prog-track"><div class="prog-fill" id="prog-fill"></div></div>
     <div class="prog-meta" id="prog-meta"></div>
+  </div>
+  <div class="sec-title">Tapes Added Over Time</div>
+  <div class="card cal-card">
+    <div class="cal-header">
+      <div class="cal-legend-wrap">
+        <span class="cal-legend-label">Less</span>
+        <div class="cal-legend-cell" style="background:var(--s3)"></div>
+        <div class="cal-legend-cell" style="background:rgba(34,197,94,.25)"></div>
+        <div class="cal-legend-cell" style="background:rgba(34,197,94,.5)"></div>
+        <div class="cal-legend-cell" style="background:rgba(34,197,94,.75)"></div>
+        <div class="cal-legend-cell" style="background:var(--acc)"></div>
+        <span class="cal-legend-label">More</span>
+      </div>
+    </div>
+    <div class="cal-months" id="cal-months"></div>
+    <div class="cal-scroll-wrap">
+      <div class="cal-grid" id="cal-grid"></div>
+    </div>
+    <div class="cal-tooltip" id="cal-tooltip"></div>
+    <div class="cal-summary" id="cal-summary"></div>
   </div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
     <div class="card">
@@ -1623,6 +1690,9 @@ function renderDashboard() {
   document.getElementById('label-bars').innerHTML=labels.map(([l,c],i)=>bRow(l,c,labels[0]?.[1]||1,COLS[i%COLS.length],110)).join('');
 
   setTimeout(()=>{ document.querySelectorAll('.bar-fill').forEach(b=>{ b.style.width=b.dataset.p+'%'; }); },200);
+
+  // Render calendar
+  renderCalendar();
 }
 
 function bRow(name,val,max,color,w) {
@@ -1638,6 +1708,163 @@ function drawDonut(segs,total,pct) {
   cx.beginPath(); cx.arc(55,55,30,0,2*Math.PI); cx.fillStyle='#111118'; cx.fill();
   cx.fillStyle='#e8e8f0'; cx.font='bold 12px Inter,sans-serif'; cx.textAlign='center'; cx.fillText(pct+'%',55,60);
   document.getElementById('donut-leg').innerHTML=segs.map(s=>`<div class="leg-row"><div class="leg-dot" style="background:${s.c}"></div><span>${s.l}</span><span class="leg-val">${s.v}</span></div>`).join('');
+}
+
+// ═══════════════════════════════════════════════
+// CALENDAR — tape additions over time
+// ═══════════════════════════════════════════════
+function renderCalendar() {
+  // Try to find a date column, fallback to REF-based simulation
+  const DATE_COLS = ['Date','date','DATE','Added','added','Date Added','date_added','DateAdded'];
+
+  // Build date → count map
+  const dateMap = {};
+  let hasRealDates = false;
+
+  ALL_TAPES.forEach((t, i) => {
+    let dateStr = '';
+    // Try real date column
+    for (const k of DATE_COLS) {
+      if (t[k] || (t._raw && t._raw[k])) { dateStr = (t[k] || t._raw[k] || '').trim(); break; }
+    }
+    // Check raw row for any date-looking value
+    if (!dateStr && ALL_TAPES[i]._rawDate) dateStr = ALL_TAPES[i]._rawDate;
+
+    if (dateStr) {
+      const d = parseDate(dateStr);
+      if (d) { hasRealDates = true; const k = fmtKey(d); dateMap[k] = (dateMap[k]||0)+1; return; }
+    }
+
+    // Fallback: spread tapes evenly across last 12 months based on REF order
+    const total = ALL_TAPES.length;
+    const msRange = 365 * 24 * 60 * 60 * 1000;
+    const base = Date.now() - msRange;
+    const d2 = new Date(base + (i / total) * msRange);
+    const k2 = fmtKey(d2);
+    dateMap[k2] = (dateMap[k2]||0)+1;
+  });
+
+  // Build 52-week grid ending today
+  const today = new Date();
+  today.setHours(0,0,0,0);
+  const DAY = 86400000;
+
+  // Start from Sunday of the week 52 weeks ago
+  const startDate = new Date(today - 52 * 7 * DAY);
+  startDate.setDate(startDate.getDate() - startDate.getDay()); // back to Sunday
+
+  const maxVal = Math.max(1, ...Object.values(dateMap));
+
+  // Build weeks array
+  const weeks = [];
+  let cur = new Date(startDate);
+  while (cur <= today) {
+    const week = [];
+    for (let d = 0; d < 7; d++) {
+      const key = fmtKey(cur);
+      const count = dateMap[key] || 0;
+      week.push({ date: new Date(cur), key, count });
+      cur.setDate(cur.getDate() + 1);
+    }
+    weeks.push(week);
+  }
+
+  // Month labels
+  const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const DAYS = ['S','M','T','W','T','F','S'];
+  const cellW = 12 + 3; // cell + gap
+
+  let monthsHtml = '';
+  let lastMonth = -1;
+  weeks.forEach((week, wi) => {
+    const m = week[0].date.getMonth();
+    if (m !== lastMonth) {
+      monthsHtml += `<span class="cal-month-label" style="width:${cellW}px;min-width:${cellW}px">${MONTHS[m]}</span>`;
+      lastMonth = m;
+    } else {
+      monthsHtml += `<span class="cal-month-label" style="width:${cellW}px;min-width:${cellW}px"></span>`;
+    }
+  });
+  document.getElementById('cal-months').innerHTML = monthsHtml;
+
+  // Build grid — weeks as columns, days as rows
+  // Add day labels column
+  let gridHtml = `<div class="cal-week" style="margin-right:4px">`;
+  DAYS.forEach(d => { gridHtml += `<div class="cal-day-label">${d}</div>`; });
+  gridHtml += '</div>';
+
+  weeks.forEach(week => {
+    gridHtml += '<div class="cal-week">';
+    week.forEach(day => {
+      const isFuture = day.date > today;
+      const col = isFuture ? 'transparent'
+        : day.count === 0 ? 'var(--s3)'
+        : day.count === 1 ? 'rgba(34,197,94,.25)'
+        : day.count <= 3  ? 'rgba(34,197,94,.5)'
+        : day.count <= 6  ? 'rgba(34,197,94,.75)'
+        : 'var(--acc)';
+      const label = day.date.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
+      gridHtml += `<div class="cal-day"
+        style="background:${col};${isFuture?'pointer-events:none':''}"
+        onmouseenter="showCalTip(event,'${label}',${day.count})"
+        onmouseleave="hideCalTip()"></div>`;
+    });
+    gridHtml += '</div>';
+  });
+
+  document.getElementById('cal-grid').innerHTML = gridHtml;
+
+  // Summary stats
+  const totalLogged = Object.values(dateMap).reduce((a,b)=>a+b,0);
+  const activeDays  = Object.values(dateMap).filter(v=>v>0).length;
+  const peakDay     = Object.entries(dateMap).sort((a,b)=>b[1]-a[1])[0];
+  const peakLabel   = peakDay ? `${peakDay[1]} on ${new Date(peakDay[0]).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})}` : '—';
+
+  // This year / this month
+  const nowY = today.getFullYear(), nowM = today.getMonth();
+  const thisYear  = Object.entries(dateMap).filter(([k])=>new Date(k).getFullYear()===nowY).reduce((a,[,v])=>a+v,0);
+  const thisMonth = Object.entries(dateMap).filter(([k])=>{const d=new Date(k);return d.getFullYear()===nowY&&d.getMonth()===nowM;}).reduce((a,[,v])=>a+v,0);
+
+  document.getElementById('cal-summary').innerHTML = [
+    `<span><b>${thisMonth}</b> this month</span>`,
+    `<span><b>${thisYear}</b> this year</span>`,
+    `<span><b>${activeDays}</b> active days</span>`,
+    `<span>Peak: <b>${peakLabel}</b></span>`,
+    !hasRealDates ? `<span style="color:var(--org)">⚠ No date column found — showing estimated spread. Add a <b>Date</b> column to your sheet for real data.</span>` : '',
+  ].filter(Boolean).join('');
+}
+
+function fmtKey(d) {
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
+function parseDate(str) {
+  if (!str) return null;
+  // Try ISO: 2024-01-15
+  let d = new Date(str);
+  if (!isNaN(d)) return d;
+  // Try DD/MM/YYYY
+  const m = str.match(/^(\d{1,2})[\/\-\.](\d{1,2})[\/\-\.](\d{2,4})$/);
+  if (m) {
+    const y = m[3].length === 2 ? '20'+m[3] : m[3];
+    d = new Date(`${y}-${m[2].padStart(2,'0')}-${m[1].padStart(2,'0')}`);
+    if (!isNaN(d)) return d;
+  }
+  return null;
+}
+
+function showCalTip(e, label, count) {
+  const tip = document.getElementById('cal-tooltip');
+  tip.style.display = 'block';
+  tip.innerHTML = `<b style="color:var(--acc)">${count} tape${count!==1?'s':''}</b> — ${label}`;
+  const rect = e.target.getBoundingClientRect();
+  const card = document.querySelector('.cal-card').getBoundingClientRect();
+  tip.style.left = (rect.left - card.left + 6) + 'px';
+  tip.style.top  = (rect.top  - card.top  - 36) + 'px';
+}
+
+function hideCalTip() {
+  document.getElementById('cal-tooltip').style.display = 'none';
 }
 
 // ═══════════════════════════════════════════════
