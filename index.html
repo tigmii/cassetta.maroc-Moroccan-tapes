@@ -530,51 +530,53 @@ mark { background:rgba(34,197,94,.2); color:var(--acc); border-radius:2px; paddi
 .shake { animation:shake .4s ease; }
 
 /* ── CONTRIBUTION CALENDAR ── */
-.cal-card { overflow:hidden; position:relative; padding:16px 20px 20px; }
+.cal-card { overflow:hidden; position:relative; padding:20px 20px 20px; }
 .cal-header {
   display:flex; align-items:center; justify-content:flex-end;
-  margin-bottom:10px;
+  margin-bottom:12px;
 }
 .cal-legend-wrap { display:flex; align-items:center; gap:4px; }
-.cal-legend-label { font-family:var(--fm); font-size:9px; color:var(--mut); }
-.cal-legend-cell { width:11px; height:11px; border-radius:2px; }
-.cal-scroll-wrap { overflow-x:auto; padding-bottom:4px; }
-.cal-months {
-  display:flex; margin-left:28px; margin-bottom:4px;
-  font-family:var(--fm); font-size:9px; color:var(--mut);
+.cal-legend-label { font-family:var(--fm); font-size:9px; color:var(--mut); letter-spacing:.5px; }
+.cal-legend-cell { width:12px; height:12px; border-radius:2px; }
+.cal-scroll-wrap { overflow-x:auto; padding-bottom:6px; }
+.cal-months-row {
+  display:flex; gap:3px; margin-left:26px; margin-bottom:4px; min-width:max-content;
+  font-family:var(--fm); font-size:9px; color:var(--mut); letter-spacing:.3px;
 }
-.cal-month-label { flex-shrink:0; }
+.cal-months-cell { width:12px; flex-shrink:0; text-align:center; }
 .cal-grid {
-  display:flex; gap:3px; align-items:flex-start;
+  display:flex; gap:3px; min-width:max-content;
 }
 .cal-week {
-  display:flex; flex-direction:column; gap:3px;
+  display:flex; flex-direction:column; gap:3px; flex-shrink:0;
 }
 .cal-day {
   width:12px; height:12px; border-radius:2px;
-  cursor:pointer; transition:transform .1s, box-shadow .1s;
-  flex-shrink:0; position:relative;
-}
-.cal-day:hover { transform:scale(1.4); box-shadow:0 0 0 1px rgba(255,255,255,.3); z-index:10; }
-.cal-day-label {
-  width:12px; height:12px; border-radius:2px;
-  display:flex; align-items:center; justify-content:center;
-  font-family:var(--fm); font-size:7px; color:var(--mut);
+  cursor:pointer; transition:transform .1s, outline .1s;
   flex-shrink:0;
 }
+.cal-day:hover { transform:scale(1.5); outline:1px solid rgba(255,255,255,.4); z-index:10; position:relative; }
+.cal-day-label {
+  width:12px; height:12px;
+  display:flex; align-items:center; justify-content:center;
+  font-family:var(--fm); font-size:7px; color:var(--mut);
+  flex-shrink:0; user-select:none;
+}
 .cal-tooltip {
-  position:absolute; background:var(--s4); border:1px solid var(--bdr2);
-  border-radius:6px; padding:6px 10px;
-  font-family:var(--fm); font-size:10px; color:var(--txt);
-  pointer-events:none; display:none; z-index:100;
-  white-space:nowrap; box-shadow:var(--sh);
+  position:fixed;
+  background:#1e1e2e; border:1px solid var(--bdr2);
+  border-radius:6px; padding:6px 12px;
+  font-family:var(--fm); font-size:11px; color:var(--txt);
+  pointer-events:none; display:none; z-index:9999;
+  white-space:nowrap; box-shadow:0 4px 16px rgba(0,0,0,.5);
+  transform:translate(-50%,-130%);
 }
 .cal-summary {
-  margin-top:14px; padding-top:12px; border-top:1px solid var(--bdr);
+  margin-top:16px; padding-top:14px; border-top:1px solid var(--bdr);
   display:flex; gap:20px; flex-wrap:wrap;
-  font-family:var(--fm); font-size:10px; color:var(--mut);
+  font-family:var(--fm); font-size:11px; color:var(--mut);
 }
-.cal-summary span b { color:var(--acc); }
+.cal-summary span b { color:var(--acc); font-weight:700; }
 
 /* ── COLLECTION MODE TOGGLE ── */
 .col-mode-bar {
@@ -875,13 +877,13 @@ img { -webkit-user-drag:none; user-drag:none; pointer-events:none; }
         <span class="cal-legend-label">More</span>
       </div>
     </div>
-    <div class="cal-months" id="cal-months"></div>
     <div class="cal-scroll-wrap">
+      <div class="cal-months-row" id="cal-months"></div>
       <div class="cal-grid" id="cal-grid"></div>
     </div>
-    <div class="cal-tooltip" id="cal-tooltip"></div>
     <div class="cal-summary" id="cal-summary"></div>
   </div>
+  <div id="cal-tooltip" class="cal-tooltip"></div>
   <div style="display:grid;grid-template-columns:1fr 1fr;gap:14px">
     <div class="card">
       <div class="card-title">Status Breakdown</div>
@@ -1718,93 +1720,109 @@ function drawDonut(segs,total,pct) {
 // CALENDAR — tape additions over time
 // ═══════════════════════════════════════════════
 function renderCalendar() {
+  // ── Build date → count map ──
   const dateMap = {};
   let hasRealDates = false;
+  let sampleDates = [];
 
   ALL_TAPES.forEach((t, i) => {
     const raw = (t.date || '').trim();
     const d = raw ? parseDate(raw) : null;
 
-    if (d && d <= new Date()) {
+    if (d && d.getFullYear() > 2000 && d <= new Date()) {
       hasRealDates = true;
       const k = fmtKey(d);
       dateMap[k] = (dateMap[k] || 0) + 1;
+      if (sampleDates.length < 3) sampleDates.push(raw + ' → ' + k);
     } else {
-      // fallback: spread evenly across last 12 months by index
+      // Fallback: spread evenly across last 12 months by index
       const base = Date.now() - 365 * 86400000;
       const d2 = new Date(base + (i / Math.max(ALL_TAPES.length, 1)) * 365 * 86400000);
-      const k2 = fmtKey(d2);
-      dateMap[k2] = (dateMap[k2] || 0) + 1;
+      dateMap[fmtKey(d2)] = (dateMap[fmtKey(d2)] || 0) + 1;
     }
   });
 
-  // 52-week grid ending today
-  const today = new Date(); today.setHours(0,0,0,0);
-  const startDate = new Date(today - 52 * 7 * 86400000);
-  startDate.setDate(startDate.getDate() - startDate.getDay());
+  console.log('📅 Calendar — hasRealDates:', hasRealDates, '| entries:', Object.keys(dateMap).length, '| sample dates:', sampleDates);
 
+  // ── Build 52-week grid ending today ──
+  const today = new Date(); today.setHours(0,0,0,0);
+
+  // Find the Sunday at or before 52 weeks ago
+  const msAgo52 = new Date(+today - 52 * 7 * 86400000);
+  const dayOfWeek = msAgo52.getDay(); // 0=Sun
+  const gridStart = new Date(+msAgo52 - dayOfWeek * 86400000);
+
+  // Build all days from gridStart to today grouped into weeks
   const weeks = [];
-  const cur = new Date(startDate);
-  while (cur <= today) {
+  let cur = new Date(gridStart);
+  while (+cur <= +today) {
     const week = [];
     for (let d = 0; d < 7; d++) {
       const key = fmtKey(cur);
       week.push({ date: new Date(cur), key, count: dateMap[key] || 0 });
-      cur.setDate(cur.getDate() + 1);
+      cur = new Date(+cur + 86400000);
     }
     weeks.push(week);
   }
 
-  // Month labels
+  // ── Month label row (aligned to week columns) ──
   const MONTHS = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
   const DAYS   = ['S','M','T','W','T','F','S'];
-  const cellW  = 15;
   let lastMonth = -1;
-  let monthsHtml = '';
+  let monthsHtml = '<div class="cal-months-cell"></div>'; // spacer for day-label column
   weeks.forEach(week => {
     const m = week[0].date.getMonth();
-    monthsHtml += `<span style="display:inline-block;width:${cellW}px;font-family:var(--fm);font-size:9px;color:var(--mut)">${m !== lastMonth ? MONTHS[m] : ''}</span>`;
-    lastMonth = m;
+    const show = m !== lastMonth;
+    monthsHtml += `<div class="cal-months-cell">${show ? MONTHS[m] : ''}</div>`;
+    if (show) lastMonth = m;
   });
   document.getElementById('cal-months').innerHTML = monthsHtml;
 
-  // Grid
-  let gridHtml = `<div class="cal-week" style="margin-right:6px">` +
-    DAYS.map(d => `<div class="cal-day-label">${d}</div>`).join('') + '</div>';
+  // ── Grid: day-label column + week columns ──
+  let gridHtml = '<div class="cal-week">';
+  DAYS.forEach(d => { gridHtml += `<div class="cal-day-label">${d}</div>`; });
+  gridHtml += '</div>';
 
   weeks.forEach(week => {
     gridHtml += '<div class="cal-week">';
     week.forEach(day => {
-      const future = day.date > today;
-      const c = future ? 'transparent'
-        : day.count === 0 ? 'var(--s3)'
-        : day.count === 1 ? 'rgba(34,197,94,.25)'
-        : day.count <= 3  ? 'rgba(34,197,94,.5)'
-        : day.count <= 6  ? 'rgba(34,197,94,.75)'
+      const isFuture = day.date > today;
+      const bg = isFuture     ? 'transparent'
+        : day.count === 0     ? 'var(--s3)'
+        : day.count === 1     ? 'rgba(34,197,94,.3)'
+        : day.count <= 3      ? 'rgba(34,197,94,.55)'
+        : day.count <= 6      ? 'rgba(34,197,94,.8)'
         : 'var(--acc)';
-      const lbl = day.date.toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'});
-      gridHtml += `<div class="cal-day" style="background:${c};${future?'pointer-events:none':''}"
-        onmouseenter="showCalTip(event,'${lbl}',${day.count})"
-        onmouseleave="hideCalTip()"></div>`;
+      const lbl = day.date.toLocaleDateString('en-GB', {day:'numeric', month:'short', year:'numeric'});
+      gridHtml += `<div class="cal-day" style="background:${bg}"
+        ${isFuture ? '' : `onmouseenter="showCalTip(event,'${lbl}',${day.count})" onmouseleave="hideCalTip()"`}></div>`;
     });
     gridHtml += '</div>';
   });
   document.getElementById('cal-grid').innerHTML = gridHtml;
 
-  // Summary
+  // ── Summary bar ──
   const nowY = today.getFullYear(), nowM = today.getMonth();
-  const activeDays  = Object.values(dateMap).filter(v => v > 0).length;
-  const thisYear    = Object.entries(dateMap).filter(([k]) => new Date(k).getFullYear() === nowY).reduce((a,[,v]) => a+v, 0);
-  const thisMonth   = Object.entries(dateMap).filter(([k]) => { const d = new Date(k); return d.getFullYear()===nowY && d.getMonth()===nowM; }).reduce((a,[,v]) => a+v, 0);
-  const peak        = Object.entries(dateMap).sort((a,b) => b[1]-a[1])[0];
-  const peakLabel   = peak ? `${peak[1]} on ${new Date(peak[0]).toLocaleDateString('en-GB',{day:'numeric',month:'short',year:'numeric'})}` : '—';
+  const activeDays = Object.values(dateMap).filter(v => v > 0).length;
+  const thisYear   = Object.entries(dateMap)
+    .filter(([k]) => new Date(k).getFullYear() === nowY)
+    .reduce((a, [, v]) => a + v, 0);
+  const thisMonth  = Object.entries(dateMap)
+    .filter(([k]) => { const d = new Date(k); return d.getFullYear() === nowY && d.getMonth() === nowM; })
+    .reduce((a, [, v]) => a + v, 0);
+  const peak = Object.entries(dateMap).sort((a, b) => b[1] - a[1])[0];
+  const peakStr = peak
+    ? `${peak[1]} on ${new Date(peak[0]).toLocaleDateString('en-GB', {day:'numeric',month:'short',year:'numeric'})}`
+    : '—';
 
   document.getElementById('cal-summary').innerHTML = [
     `<span><b>${thisMonth}</b> this month</span>`,
     `<span><b>${thisYear}</b> this year</span>`,
     `<span><b>${activeDays}</b> active days</span>`,
-    `<span>Peak: <b>${peakLabel}</b></span>`,
-    !hasRealDates ? `<span style="color:var(--org)">⚠ No dates found yet — add dates to your sheet for real data.</span>` : '',
+    `<span>Peak: <b>${peakStr}</b></span>`,
+    !hasRealDates
+      ? `<span style="color:var(--org)">⚠ No dates read from sheet yet — check your <b>date</b> column or open console for debug info.</span>`
+      : '',
   ].filter(Boolean).join('');
 }
 
@@ -1846,11 +1864,11 @@ function parseDate(str) {
 function showCalTip(e, label, count) {
   const tip = document.getElementById('cal-tooltip');
   tip.style.display = 'block';
-  tip.innerHTML = `<b style="color:var(--acc)">${count} tape${count!==1?'s':''}</b> — ${label}`;
-  const rect = e.target.getBoundingClientRect();
-  const card = document.querySelector('.cal-card').getBoundingClientRect();
-  tip.style.left = (rect.left - card.left + 6) + 'px';
-  tip.style.top  = (rect.top  - card.top  - 36) + 'px';
+  tip.innerHTML = count > 0
+    ? `<b style="color:var(--acc)">${count} tape${count!==1?'s':''} added</b><br><span style="color:var(--mut)">${label}</span>`
+    : `<span style="color:var(--mut)">No tapes — ${label}</span>`;
+  tip.style.left = (e.clientX) + 'px';
+  tip.style.top  = (e.clientY) + 'px';
 }
 
 function hideCalTip() {
