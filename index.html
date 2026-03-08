@@ -949,7 +949,7 @@ img { -webkit-user-drag:none; user-drag:none; pointer-events:none; }
       </div>
       <div class="label-grid" id="col-label-list"></div>
     </div>
-    <!-- Label → artists view -->
+    <!-- Label → tapes view (direct, no artist step) -->
     <div id="col-label-artists-view" style="display:none">
       <div class="col-detail-header">
         <button class="col-back-btn" onclick="showLabelList()">← Labels</button>
@@ -958,20 +958,7 @@ img { -webkit-user-drag:none; user-drag:none; pointer-events:none; }
           <div class="col-detail-sub" id="col-label-sub"></div>
         </div>
       </div>
-      <!-- Artists for this label -->
-      <div class="sec-title" style="margin:16px 0 12px">Artists</div>
-      <div class="artist-grid" id="col-label-artists-grid"></div>
-      <!-- Tapes for selected artist inside label -->
-      <div id="col-label-artist-tapes" style="display:none">
-        <div class="col-detail-header" style="margin-top:24px">
-          <button class="col-back-btn" onclick="hideLabelArtistTapes()">← Artists</button>
-          <div>
-            <div class="col-detail-name" id="col-label-artist-name"></div>
-            <div class="col-detail-sub" id="col-label-artist-sub"></div>
-          </div>
-        </div>
-        <div class="col-grid" id="col-label-artist-grid"></div>
-      </div>
+      <div class="col-grid" id="col-label-tapes-grid"></div>
     </div>
   </div>
 
@@ -1530,68 +1517,19 @@ function renderLabels() {
 }
 
 function showLabel(labelName) {
-  const tapes = ALL_TAPES.filter(t => (t.label||'').trim() === labelName || (!t.label && labelName === 'Unknown'));
-  const artistMap = {};
-  tapes.forEach(t => {
-    const a = t.artist||'Unknown';
-    if (!artistMap[a]) artistMap[a] = [];
-    artistMap[a].push(t);
-  });
-  const artists = Object.keys(artistMap).sort((a,b) => a.localeCompare(b));
+  const tapes = ALL_TAPES.filter(t =>
+    (t.label||'').trim() === labelName || (!t.label && labelName === 'Unknown')
+  );
 
   document.getElementById('col-label-name').textContent = labelName;
   document.getElementById('col-label-sub').textContent =
-    `${tapes.length} tape${tapes.length!==1?'s':''} · ${artists.length} artist${artists.length!==1?'s':''}`;
+    `${tapes.length} tape${tapes.length!==1?'s':''} · ${[...new Set(tapes.map(t=>t.artist).filter(Boolean))].length} artists`;
 
-  // Render artist grid for this label
-  document.getElementById('col-label-artists-grid').innerHTML = artists.map(name => {
-    const at = artistMap[name];
-    const raw = at.find(t=>t.artwork)?.artwork || '';
-    const thumb = fixArtUrl(raw);
-    const initials = name.split(/\s+/).map(w=>w[0]).join('').toUpperCase().slice(0,2);
-    const digCount = at.filter(t=>t.digitized).length;
-    const safe = name.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
-    const lsafe = labelName.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
-    return `
-      <div class="artist-card" onclick="showLabelArtist('${safe}','${lsafe}')">
-        <div class="artist-card-art">
-          ${thumb
-            ? `<img src="${esc(thumb)}" alt="" loading="lazy" onerror="this.parentElement.innerHTML='<div class=\\'artist-card-placeholder\\'><span class=\\'artist-card-initials\\'>${initials}</span></div>'">`
-            : `<div class="artist-card-placeholder"><span class="artist-card-initials">${initials}</span><span class="artist-card-count">${at.length} tape${at.length!==1?'s':''}</span></div>`}
-        </div>
-        <div class="artist-card-info">
-          <div class="artist-card-name" title="${esc(name)}">${esc(name)}</div>
-          <div class="artist-card-meta">
-            <span>${at.length} tape${at.length!==1?'s':''}</span>
-            ${digCount?`<span style="color:var(--acc)">✓${digCount}</span>`:''}
-          </div>
-        </div>
-      </div>`;
-  }).join('');
-
-  // Hide tapes sub-view
-  document.getElementById('col-label-artist-tapes').style.display = 'none';
+  document.getElementById('col-label-tapes-grid').innerHTML = tapes.map(t => colTile(t)).join('');
 
   document.getElementById('col-label-list-view').style.display = 'none';
   document.getElementById('col-label-artists-view').style.display = '';
-  window.scrollTo(0,0);
-}
-
-function showLabelArtist(artistName, labelName) {
-  const tapes = ALL_TAPES.filter(t =>
-    t.artist === artistName &&
-    ((t.label||'').trim() === labelName || (!t.label && labelName === 'Unknown'))
-  );
-  document.getElementById('col-label-artist-name').textContent = artistName;
-  document.getElementById('col-label-artist-sub').textContent =
-    `${tapes.length} tape${tapes.length!==1?'s':''} on ${labelName}`;
-  document.getElementById('col-label-artist-grid').innerHTML = tapes.map(t => colTile(t)).join('');
-  document.getElementById('col-label-artist-tapes').style.display = '';
-  document.getElementById('col-label-artist-tapes').scrollIntoView({behavior:'smooth', block:'start'});
-}
-
-function hideLabelArtistTapes() {
-  document.getElementById('col-label-artist-tapes').style.display = 'none';
+  window.scrollTo(0, 0);
 }
 
 function showLabelList() {
