@@ -1744,29 +1744,24 @@ function renderCalendar() {
   const dateMap = {};
   let hasRealDates = false;
 
-  ALL_TAPES.forEach((t, i) => {
+  ALL_TAPES.forEach((t) => {
     const raw = (t.date || '').trim();
     const d = raw ? parseDate(raw) : null;
-
-    if (d && d.getFullYear() > 2000 && d <= new Date()) {
+    if (d && d.getFullYear() > 2000) {
       hasRealDates = true;
       const k = fmtKey(d);
       dateMap[k] = (dateMap[k] || 0) + 1;
-    } else {
-      // Fallback: spread evenly across last 12 months by index
-      const base = Date.now() - 365 * 86400000;
-      const d2 = new Date(base + (i / Math.max(ALL_TAPES.length, 1)) * 365 * 86400000);
-      dateMap[fmtKey(d2)] = (dateMap[fmtKey(d2)] || 0) + 1;
     }
+    // No date = skip entirely, leave that day blank
   });
 
   if (hasRealDates) dbg.style.display = 'none'; // hide debug once working
 
-  // ── Build 52-week grid ending today ──
+  // ── Build grid from Jan 1 2026 to today ──
   const today = new Date(); today.setHours(0,0,0,0);
-  const msAgo52 = new Date(+today - 52 * 7 * 86400000);
-  const dayOfWeek = msAgo52.getDay();
-  const gridStart = new Date(+msAgo52 - dayOfWeek * 86400000);
+  const yearStart = new Date(2026, 0, 1); // Jan 1 2026
+  // Back to the Sunday on or before Jan 1
+  const gridStart = new Date(+yearStart - yearStart.getDay() * 86400000);
 
   const weeks = [];
   let cur = new Date(gridStart);
@@ -1800,7 +1795,7 @@ function renderCalendar() {
   weeks.forEach(week => {
     gridHtml += '<div class="cal-week">';
     week.forEach(day => {
-      const isFuture = day.date > today;
+      const isFuture = day.date > new Date(+today + 2 * 86400000);
       const bg = isFuture         ? 'transparent'
         : day.count === 0         ? 'var(--s3)'
         : day.count === 1         ? 'rgba(34,197,94,.3)'
@@ -2029,6 +2024,9 @@ function escReg(s){ return s.replace(/[.*+?^${}()|[\]\\]/g,'\\$&'); }
 // INIT
 // ═══════════════════════════════════════════════
 window.addEventListener('DOMContentLoaded', async () => {
+  // Restore session first — must happen before page routing
+  checkAdminSession();
+
   // Disable right-click everywhere
   document.addEventListener('contextmenu', e => e.preventDefault());
   // Block Ctrl+S / Cmd+S save shortcut
