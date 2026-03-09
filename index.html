@@ -678,6 +678,90 @@ mark { background:rgba(34,197,94,.2); color:var(--acc); border-radius:2px; paddi
   color:#fc3c64; font-family:var(--fm); font-size:9px; cursor:pointer;
 }
 
+/* ── PLAY BUTTON on tiles ── */
+.col-tile-play {
+  display:inline-flex; align-items:center; gap:5px;
+  padding:4px 10px; border-radius:6px;
+  background:rgba(34,197,94,.12); border:1px solid rgba(34,197,94,.3);
+  color:var(--acc); font-family:var(--fm); font-size:9px;
+  letter-spacing:.8px; text-transform:uppercase;
+  cursor:pointer; transition:all .2s;
+}
+.col-tile-play:hover { background:rgba(34,197,94,.22); border-color:var(--acc); }
+
+/* ── MUSIC PLAYER MODAL ── */
+#music-player-modal {
+  display:none; position:fixed; inset:0; z-index:9000;
+  background:rgba(0,0,0,.75); backdrop-filter:blur(8px);
+  align-items:center; justify-content:center;
+}
+#music-player-modal.open { display:flex; }
+.mp-box {
+  background:var(--s1); border:1px solid var(--bdr2);
+  border-radius:20px; width:340px; max-width:92vw;
+  padding:24px; box-shadow:0 24px 80px rgba(0,0,0,.7);
+  position:relative;
+}
+.mp-top { display:flex; gap:16px; align-items:flex-start; margin-bottom:20px; }
+.mp-art {
+  width:72px; height:72px; border-radius:10px; flex-shrink:0;
+  background:var(--s3); overflow:hidden;
+  display:flex; align-items:center; justify-content:center;
+}
+.mp-art img { width:100%; height:100%; object-fit:cover; pointer-events:none; }
+.mp-art-placeholder { font-size:28px; color:var(--mut); }
+.mp-info { flex:1; min-width:0; padding-top:4px; }
+.mp-title { font-size:15px; font-weight:700; color:var(--txt); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:4px; }
+.mp-artist { font-family:var(--fm); font-size:11px; color:var(--mut); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
+.mp-status { font-family:var(--fm); font-size:10px; color:var(--acc); margin-top:6px; }
+.mp-close {
+  position:absolute; top:16px; right:16px;
+  background:var(--s3); border:none; color:var(--mut);
+  width:28px; height:28px; border-radius:50%; cursor:pointer;
+  font-size:12px; display:flex; align-items:center; justify-content:center;
+  transition:all .2s;
+}
+.mp-close:hover { background:var(--bdr2); color:var(--txt); }
+.mp-progress-wrap {
+  cursor:pointer; padding:8px 0; margin-bottom:4px;
+}
+.mp-progress-bar {
+  height:4px; background:var(--s3); border-radius:2px; position:relative;
+}
+.mp-progress-fill {
+  height:100%; background:var(--acc); border-radius:2px;
+  width:0%; transition:width .1s linear; pointer-events:none;
+}
+.mp-progress-thumb {
+  width:12px; height:12px; background:var(--acc); border-radius:50%;
+  position:absolute; top:50%; transform:translate(-50%,-50%);
+  left:0%; transition:left .1s linear; pointer-events:none;
+  box-shadow:0 0 0 3px rgba(34,197,94,.2);
+}
+.mp-times {
+  display:flex; justify-content:space-between;
+  font-family:var(--fm); font-size:10px; color:var(--mut);
+  margin-bottom:20px;
+}
+.mp-controls { display:flex; align-items:center; justify-content:center; gap:20px; margin-bottom:20px; }
+.mp-btn { background:none; border:none; color:var(--txt2); cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all .2s; border-radius:50%; padding:4px; }
+.mp-btn:hover { color:var(--txt); }
+.mp-play-btn {
+  width:52px; height:52px; background:var(--acc); border-radius:50%;
+  color:#000; box-shadow:0 0 20px rgba(34,197,94,.4);
+}
+.mp-play-btn:hover { transform:scale(1.08); box-shadow:0 0 28px rgba(34,197,94,.55); }
+.mp-skip { color:var(--mut); }
+.mp-volume-row { display:flex; align-items:center; gap:10px; }
+.mp-volume {
+  flex:1; -webkit-appearance:none; height:3px;
+  background:var(--s3); border-radius:2px; outline:none; cursor:pointer;
+}
+.mp-volume::-webkit-slider-thumb {
+  -webkit-appearance:none; width:12px; height:12px;
+  background:var(--acc); border-radius:50%; cursor:pointer;
+}
+
 /* ── COLLECTION MODE TOGGLE ── */
 .col-mode-bar {
   display:flex; gap:8px; margin-bottom:24px;
@@ -1094,6 +1178,49 @@ img { -webkit-user-drag:none; user-drag:none; pointer-events:none; }
   </div>
 </div>
 
+
+<!-- ══ MUSIC PLAYER MODAL ══ -->
+<div id="music-player-modal" onclick="if(event.target===this)closePlayer()">
+  <div class="mp-box">
+    <div class="mp-top">
+      <div class="mp-art" id="mp-art">
+        <div class="mp-art-placeholder">♪</div>
+      </div>
+      <div class="mp-info">
+        <div class="mp-title" id="mp-title">—</div>
+        <div class="mp-artist" id="mp-artist">—</div>
+        <div class="mp-status" id="mp-status">Loading…</div>
+      </div>
+      <button class="mp-close" onclick="closePlayer()">✕</button>
+    </div>
+    <div class="mp-progress-wrap" onclick="seekPlayer(event)">
+      <div class="mp-progress-bar">
+        <div class="mp-progress-fill" id="mp-fill"></div>
+        <div class="mp-progress-thumb" id="mp-thumb"></div>
+      </div>
+    </div>
+    <div class="mp-times">
+      <span id="mp-cur">0:00</span>
+      <span id="mp-dur">—</span>
+    </div>
+    <div class="mp-controls">
+      <button class="mp-btn mp-skip" onclick="skipPlayer(-15)" title="−15s">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/><text x="12" y="14" text-anchor="middle" font-size="6" fill="currentColor">15</text></svg>
+      </button>
+      <button class="mp-btn mp-play-btn" id="mp-play-btn" onclick="togglePlay()">
+        <svg id="mp-play-icon" width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>
+      </button>
+      <button class="mp-btn mp-skip" onclick="skipPlayer(15)" title="+15s">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 5V1l5 5-5 5V7c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6h2c0 4.42-3.58 8-8 8s-8-3.58-8-8 3.58-8 8-8z"/><text x="12" y="14" text-anchor="middle" font-size="6" fill="currentColor">15</text></svg>
+      </button>
+    </div>
+    <div class="mp-volume-row">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="var(--mut)"><path d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02z"/></svg>
+      <input type="range" class="mp-volume" id="mp-volume" min="0" max="1" step="0.05" value="1" oninput="setVolume(this.value)">
+    </div>
+  </div>
+</div>
+
 <!-- ══ ADMIN LOGIN MODAL ══ -->
 <div id="admin-modal" style="display:none">
   <div class="modal-backdrop" onclick="closeAdminLogin()"></div>
@@ -1348,6 +1475,7 @@ function normalise(r, i) {
     mainGenre: mg(get(r,'Genre','Genre_Category','Genre / Category','GENRE','Style')),
     artwork:   _artKey ? (r[_artKey]||'').trim() : '',
     date:      get(r,'dates','date','Date','Dates','DATE','date added','Date Added','created','Created').trim(),
+    music:     get(r,'music','Music','MUSIC','audio','Audio','url','URL','link','Link','mp3','MP3').trim(),
   };
 }
 
@@ -1454,6 +1582,11 @@ function tapeCard(t, q='') {
       <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>
       iTunes
     </button>` : '';
+  const musicBtn = t.music ? `
+    <button class="col-tile-play" onclick="event.stopPropagation();openPlayer('${t.music.replace(/'/g,"\\'")}','${itA}','${itB}','${(fixArtUrl(t.artwork)||'').replace(/'/g,"\\'")}')">
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>
+      Play
+    </button>` : '';
   return `
     <div class="tape-card">
       <div class="tape-num">#${t.ref}</div>
@@ -1461,7 +1594,7 @@ function tapeCard(t, q='') {
         <div class="tape-artist">${hi(esc(t.artist))}</div>
         <div class="tape-album">${hi(esc(t.album||'—'))}</div>
         <div class="tape-tags">${tags}</div>
-        ${itunesBtn}
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">${musicBtn}${itunesBtn}</div>
       </div>
     </div>`;
 }
@@ -1716,6 +1849,12 @@ function colTile(t) {
       iTunes
     </button>` : '';
 
+  const musicBtn = t.music ? `
+    <button class="col-tile-play" onclick="event.stopPropagation();openPlayer('${t.music.replace(/'/g,"\\'")}','${(t.artist||'').replace(/'/g,"\\'")}','${(t.album||'—').replace(/'/g,"\\'")}','${(fixArtUrl(t.artwork)||'').replace(/'/g,"\\'")}')">
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>
+      Play
+    </button>` : '';
+
   return `
     <div class="col-tile">
       <div class="col-art">${artInner}<div class="col-art-status" style="background:${statusColor}"></div></div>
@@ -1723,7 +1862,7 @@ function colTile(t) {
         <div class="col-tile-title" title="${esc(t.album||'—')}">${esc(t.album||'—')}</div>
         <div class="col-tile-sub">${esc(t.artist||'')}${t.label ? ' · '+esc(t.label) : ''}</div>
         <div class="col-tile-tags">${tags}</div>
-        ${itunesBtn}
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px">${musicBtn}${itunesBtn}</div>
       </div>
     </div>`;
 }
@@ -1735,6 +1874,7 @@ let _itunesAudio = null;
 let _currentTrackEl = null;
 
 async function openITunes(artist, album) {
+  closePlayer(); // stop personal player if running
   const modal = document.getElementById('itunes-modal');
   modal.classList.add('open');
   document.getElementById('itunes-title').textContent = album || artist;
@@ -1827,6 +1967,125 @@ function stopPreview() {
   if (_currentTrackEl) { _currentTrackEl.classList.remove('playing'); _currentTrackEl = null; }
   document.getElementById('itunes-mini').classList.remove('visible');
 }
+
+// ═══════════════════════════════════════════════
+// MUSIC PLAYER — personal archive.org library
+// ═══════════════════════════════════════════════
+let _playerAudio = null;
+let _playerRAF   = null;
+
+function openPlayer(url, artist, album, artUrl) {
+  // Stop iTunes preview if playing
+  stopPreview();
+
+  const modal = document.getElementById('music-player-modal');
+  modal.classList.add('open');
+
+  document.getElementById('mp-title').textContent  = album  || 'Unknown Album';
+  document.getElementById('mp-artist').textContent = artist || 'Unknown Artist';
+  document.getElementById('mp-status').textContent = 'Loading…';
+  document.getElementById('mp-fill').style.width   = '0%';
+  document.getElementById('mp-thumb').style.left   = '0%';
+  document.getElementById('mp-cur').textContent    = '0:00';
+  document.getElementById('mp-dur').textContent    = '—';
+
+  // Artwork
+  const artEl = document.getElementById('mp-art');
+  artEl.innerHTML = artUrl
+    ? `<img src="${esc(artUrl)}" alt="" onerror="this.parentElement.innerHTML='<div class=mp-art-placeholder>♪</div>'">`
+    : '<div class="mp-art-placeholder">♪</div>';
+
+  // Stop existing audio
+  if (_playerAudio) { _playerAudio.pause(); cancelAnimationFrame(_playerRAF); _playerAudio = null; }
+
+  const audio = new Audio();
+  audio.crossOrigin = 'anonymous';
+  audio.volume = parseFloat(document.getElementById('mp-volume').value) || 1;
+  _playerAudio = audio;
+
+  audio.addEventListener('loadedmetadata', () => {
+    document.getElementById('mp-dur').textContent = fmtTime(audio.duration);
+    document.getElementById('mp-status').textContent = 'Ready';
+  });
+  audio.addEventListener('canplay', () => {
+    audio.play();
+    document.getElementById('mp-status').textContent = 'Playing';
+    setPlayIcon(true);
+    tickPlayer();
+  });
+  audio.addEventListener('ended', () => {
+    setPlayIcon(false);
+    document.getElementById('mp-status').textContent = 'Finished';
+    cancelAnimationFrame(_playerRAF);
+  });
+  audio.addEventListener('error', () => {
+    document.getElementById('mp-status').textContent = '⚠ Could not load audio — check the URL in your sheet';
+  });
+
+  audio.src = url;
+  audio.load();
+}
+
+function tickPlayer() {
+  const audio = _playerAudio;
+  if (!audio || audio.paused) return;
+  const pct = audio.duration ? (audio.currentTime / audio.duration) * 100 : 0;
+  document.getElementById('mp-fill').style.width  = pct + '%';
+  document.getElementById('mp-thumb').style.left  = pct + '%';
+  document.getElementById('mp-cur').textContent   = fmtTime(audio.currentTime);
+  _playerRAF = requestAnimationFrame(tickPlayer);
+}
+
+function togglePlay() {
+  const audio = _playerAudio;
+  if (!audio) return;
+  if (audio.paused) {
+    audio.play();
+    document.getElementById('mp-status').textContent = 'Playing';
+    setPlayIcon(true);
+    tickPlayer();
+  } else {
+    audio.pause();
+    document.getElementById('mp-status').textContent = 'Paused';
+    setPlayIcon(false);
+    cancelAnimationFrame(_playerRAF);
+  }
+}
+
+function setPlayIcon(playing) {
+  document.getElementById('mp-play-icon').outerHTML = playing
+    ? `<svg id="mp-play-icon" width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>`
+    : `<svg id="mp-play-icon" width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>`;
+}
+
+function skipPlayer(secs) {
+  if (!_playerAudio) return;
+  _playerAudio.currentTime = Math.max(0, Math.min(_playerAudio.duration || 0, _playerAudio.currentTime + secs));
+}
+
+function seekPlayer(e) {
+  if (!_playerAudio || !_playerAudio.duration) return;
+  const bar = e.currentTarget.querySelector('.mp-progress-bar');
+  const rect = bar.getBoundingClientRect();
+  const pct = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+  _playerAudio.currentTime = pct * _playerAudio.duration;
+}
+
+function setVolume(val) {
+  if (_playerAudio) _playerAudio.volume = parseFloat(val);
+}
+
+function closePlayer() {
+  if (_playerAudio) { _playerAudio.pause(); cancelAnimationFrame(_playerRAF); _playerAudio = null; }
+  document.getElementById('music-player-modal').classList.remove('open');
+}
+
+function fmtTime(s) {
+  if (!s || isNaN(s)) return '0:00';
+  const m = Math.floor(s / 60), sec = Math.floor(s % 60);
+  return `${m}:${String(sec).padStart(2,'0')}`;
+}
+
 
 function closeITunes() {
   stopPreview();
