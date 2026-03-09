@@ -578,106 +578,6 @@ mark { background:rgba(34,197,94,.2); color:var(--acc); border-radius:2px; paddi
 }
 .cal-summary span b { color:var(--acc); font-weight:700; }
 
-/* ── ITUNES BUTTON ON TILE ── */
-.col-tile-itunes {
-  display:flex; align-items:center; justify-content:center;
-  gap:5px; margin-top:8px;
-  padding:5px 8px; border-radius:6px;
-  background:rgba(250,60,100,.08); border:1px solid rgba(250,60,100,.2);
-  color:#fc3c64; font-family:var(--fm); font-size:9px; letter-spacing:.8px;
-  text-transform:uppercase; cursor:pointer; transition:all .2s; width:100%;
-}
-.col-tile-itunes:hover { background:rgba(250,60,100,.18); border-color:rgba(250,60,100,.5); }
-.col-tile-itunes svg { flex-shrink:0; }
-
-/* ── ITUNES PLAYER MODAL ── */
-#itunes-modal {
-  position:fixed; inset:0; z-index:9000;
-  background:rgba(0,0,0,.7); backdrop-filter:blur(8px);
-  display:none; align-items:center; justify-content:center; padding:20px;
-}
-#itunes-modal.open { display:flex; }
-.itunes-box {
-  background:#111118; border:1px solid var(--bdr2);
-  border-radius:16px; width:100%; max-width:480px;
-  max-height:85vh; overflow:hidden; display:flex; flex-direction:column;
-  box-shadow:0 24px 80px rgba(0,0,0,.8);
-}
-.itunes-header {
-  padding:16px 20px; border-bottom:1px solid var(--bdr);
-  display:flex; align-items:center; gap:12px;
-}
-.itunes-logo {
-  width:32px; height:32px; border-radius:8px;
-  background:linear-gradient(135deg,#fc3c64,#ff6b35);
-  display:flex; align-items:center; justify-content:center; flex-shrink:0;
-}
-.itunes-header-info { flex:1; min-width:0; }
-.itunes-header-title { font-size:13px; font-weight:700; color:var(--txt); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.itunes-header-sub { font-family:var(--fm); font-size:10px; color:var(--mut); margin-top:2px; }
-.itunes-close {
-  width:28px; height:28px; border-radius:50%;
-  background:var(--s3); border:none; color:var(--mut);
-  cursor:pointer; font-size:14px; display:flex; align-items:center; justify-content:center;
-  flex-shrink:0; transition:all .2s;
-}
-.itunes-close:hover { background:var(--s4); color:var(--txt); }
-.itunes-body { flex:1; overflow-y:auto; padding:12px 16px; }
-.itunes-loading {
-  padding:40px 0; text-align:center;
-  font-family:var(--fm); font-size:11px; color:var(--mut);
-}
-.itunes-loading .spin-icon { font-size:24px; animation:spin 1s linear infinite; display:block; margin-bottom:8px; }
-@keyframes spin { to { transform:rotate(360deg); } }
-.itunes-none { padding:32px 0; text-align:center; font-family:var(--fm); font-size:11px; color:var(--mut); }
-.itunes-none .icon { font-size:28px; margin-bottom:8px; }
-.itunes-open-btn {
-  display:flex; align-items:center; justify-content:center; gap:6px;
-  margin:12px 16px 16px; padding:10px; border-radius:8px;
-  background:linear-gradient(135deg,rgba(252,60,100,.15),rgba(255,107,53,.1));
-  border:1px solid rgba(252,60,100,.3); color:#fc3c64;
-  font-family:var(--fm); font-size:10px; letter-spacing:.8px; text-transform:uppercase;
-  cursor:pointer; transition:all .2s; text-decoration:none;
-}
-.itunes-open-btn:hover { background:linear-gradient(135deg,rgba(252,60,100,.25),rgba(255,107,53,.2)); }
-.itunes-track {
-  display:flex; align-items:center; gap:10px;
-  padding:8px; border-radius:8px; cursor:pointer;
-  transition:background .15s; margin-bottom:2px;
-}
-.itunes-track:hover { background:var(--s2); }
-.itunes-track.playing { background:rgba(252,60,100,.08); }
-.itunes-track-art {
-  width:44px; height:44px; border-radius:6px; overflow:hidden; flex-shrink:0;
-  background:var(--s3);
-}
-.itunes-track-art img { width:100%; height:100%; object-fit:cover; pointer-events:none; }
-.itunes-track-info { flex:1; min-width:0; }
-.itunes-track-name { font-size:12px; font-weight:600; color:var(--txt); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.itunes-track-album { font-family:var(--fm); font-size:10px; color:var(--mut); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-top:2px; }
-.itunes-track-play {
-  width:32px; height:32px; border-radius:50%; flex-shrink:0;
-  background:rgba(252,60,100,.1); border:1px solid rgba(252,60,100,.3);
-  color:#fc3c64; display:flex; align-items:center; justify-content:center;
-  font-size:11px; transition:all .2s;
-}
-.itunes-track:hover .itunes-track-play { background:rgba(252,60,100,.2); }
-.itunes-track.playing .itunes-track-play { background:#fc3c64; color:#fff; border-color:#fc3c64; }
-.itunes-mini-player {
-  padding:12px 16px; border-top:1px solid var(--bdr);
-  display:none; align-items:center; gap:10px;
-  background:rgba(252,60,100,.05);
-}
-.itunes-mini-player.visible { display:flex; }
-.itunes-mini-info { flex:1; min-width:0; }
-.itunes-mini-name { font-size:11px; font-weight:600; color:var(--txt); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.itunes-mini-time { font-family:var(--fm); font-size:9px; color:var(--mut); margin-top:1px; }
-.itunes-mini-stop {
-  padding:5px 12px; border-radius:6px;
-  background:rgba(252,60,100,.1); border:1px solid rgba(252,60,100,.2);
-  color:#fc3c64; font-family:var(--fm); font-size:9px; cursor:pointer;
-}
-
 /* ── PLAY BUTTON on tiles ── */
 .col-tile-play {
   display:inline-flex; align-items:center; gap:5px;
@@ -692,38 +592,84 @@ mark { background:rgba(34,197,94,.2); color:var(--acc); border-radius:2px; paddi
 /* ── MUSIC PLAYER MODAL ── */
 #music-player-modal {
   display:none; position:fixed; inset:0; z-index:9000;
-  background:rgba(0,0,0,.75); backdrop-filter:blur(8px);
+  background:rgba(0,0,0,.8); backdrop-filter:blur(10px);
   align-items:center; justify-content:center;
 }
 #music-player-modal.open { display:flex; }
 .mp-box {
-  background:var(--s1); border:1px solid var(--bdr2);
-  border-radius:20px; width:340px; max-width:92vw;
-  padding:24px; box-shadow:0 24px 80px rgba(0,0,0,.7);
-  position:relative;
+  background:#13131a; border:1px solid var(--bdr2);
+  border-radius:20px; width:380px; max-width:94vw;
+  max-height:90vh; display:flex; flex-direction:column;
+  box-shadow:0 32px 80px rgba(0,0,0,.8);
+  position:relative; overflow:hidden;
 }
-.mp-top { display:flex; gap:16px; align-items:flex-start; margin-bottom:20px; }
+.mp-top { display:flex; gap:14px; align-items:flex-start; padding:20px 20px 16px; flex-shrink:0; }
 .mp-art {
-  width:72px; height:72px; border-radius:10px; flex-shrink:0;
+  width:68px; height:68px; border-radius:10px; flex-shrink:0;
   background:var(--s3); overflow:hidden;
   display:flex; align-items:center; justify-content:center;
 }
 .mp-art img { width:100%; height:100%; object-fit:cover; pointer-events:none; }
 .mp-art-placeholder { font-size:28px; color:var(--mut); }
-.mp-info { flex:1; min-width:0; padding-top:4px; }
-.mp-title { font-size:15px; font-weight:700; color:var(--txt); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:4px; }
+.mp-info { flex:1; min-width:0; padding-top:2px; }
+.mp-title { font-size:14px; font-weight:700; color:var(--txt); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; margin-bottom:3px; }
 .mp-artist { font-family:var(--fm); font-size:11px; color:var(--mut); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-.mp-status { font-family:var(--fm); font-size:10px; color:var(--acc); margin-top:6px; }
+.mp-status { font-family:var(--fm); font-size:10px; color:var(--acc); margin-top:5px; }
 .mp-close {
-  position:absolute; top:16px; right:16px;
-  background:var(--s3); border:none; color:var(--mut);
-  width:28px; height:28px; border-radius:50%; cursor:pointer;
-  font-size:12px; display:flex; align-items:center; justify-content:center;
-  transition:all .2s;
+  position:absolute; top:14px; right:14px;
+  background:rgba(255,255,255,.07); border:none; color:var(--mut);
+  width:26px; height:26px; border-radius:50%; cursor:pointer;
+  font-size:11px; display:flex; align-items:center; justify-content:center;
+  transition:all .2s; flex-shrink:0;
 }
-.mp-close:hover { background:var(--bdr2); color:var(--txt); }
+.mp-close:hover { background:rgba(255,255,255,.15); color:var(--txt); }
+
+/* Tracklist */
+.mp-tracklist {
+  flex:1; overflow-y:auto; border-top:1px solid var(--bdr);
+  border-bottom:1px solid var(--bdr);
+  min-height:80px; max-height:240px;
+}
+.mp-tl-loading {
+  padding:20px; text-align:center;
+  font-family:var(--fm); font-size:11px; color:var(--mut);
+  display:flex; align-items:center; justify-content:center; gap:8px;
+}
+.mp-spin { display:inline-block; animation:spin360 1s linear infinite; }
+@keyframes spin360 { to { transform:rotate(360deg); } }
+.mp-tl-error { padding:16px; text-align:center; font-family:var(--fm); font-size:11px; color:var(--red); }
+.mp-track-row {
+  display:flex; align-items:center; gap:10px;
+  padding:10px 16px; cursor:pointer; transition:background .15s;
+  border-bottom:1px solid var(--bdr);
+}
+.mp-track-row:last-child { border-bottom:none; }
+.mp-track-row:hover { background:var(--s2); }
+.mp-track-row.active { background:rgba(34,197,94,.08); }
+.mp-track-num {
+  font-family:var(--fm); font-size:10px; color:var(--mut);
+  width:18px; text-align:center; flex-shrink:0;
+}
+.mp-track-row.active .mp-track-num { color:var(--acc); }
+.mp-track-info { flex:1; min-width:0; }
+.mp-track-name {
+  font-size:12px; font-weight:500; color:var(--txt);
+  white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+}
+.mp-track-row.active .mp-track-name { color:var(--acc); }
+.mp-track-dur { font-family:var(--fm); font-size:9px; color:var(--mut); margin-top:2px; }
+.mp-track-play-icon {
+  width:24px; height:24px; border-radius:50%; flex-shrink:0;
+  display:flex; align-items:center; justify-content:center;
+  font-size:9px; color:var(--acc);
+  background:rgba(34,197,94,.12); opacity:0;
+}
+.mp-track-row.active .mp-track-play-icon { opacity:1; }
+.mp-track-row:hover .mp-track-play-icon { opacity:.6; }
+
+/* Controls */
 .mp-progress-wrap {
-  cursor:pointer; padding:8px 0; margin-bottom:4px;
+  cursor:pointer; padding:12px 20px 4px; flex-shrink:0;
 }
 .mp-progress-bar {
   height:4px; background:var(--s3); border-radius:2px; position:relative;
@@ -739,20 +685,19 @@ mark { background:rgba(34,197,94,.2); color:var(--acc); border-radius:2px; paddi
   box-shadow:0 0 0 3px rgba(34,197,94,.2);
 }
 .mp-times {
-  display:flex; justify-content:space-between;
+  display:flex; align-items:center; justify-content:space-between;
   font-family:var(--fm); font-size:10px; color:var(--mut);
-  margin-bottom:20px;
+  padding:4px 20px 12px; flex-shrink:0;
 }
-.mp-controls { display:flex; align-items:center; justify-content:center; gap:20px; margin-bottom:20px; }
-.mp-btn { background:none; border:none; color:var(--txt2); cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all .2s; border-radius:50%; padding:4px; }
-.mp-btn:hover { color:var(--txt); }
+.mp-controls { display:flex; align-items:center; justify-content:center; gap:24px; padding:0 20px 16px; flex-shrink:0; }
+.mp-btn { background:none; border:none; color:var(--txt2); cursor:pointer; display:flex; align-items:center; justify-content:center; transition:all .2s; border-radius:50%; padding:6px; }
+.mp-btn:hover { color:var(--txt); background:rgba(255,255,255,.06); }
 .mp-play-btn {
   width:52px; height:52px; background:var(--acc); border-radius:50%;
-  color:#000; box-shadow:0 0 20px rgba(34,197,94,.4);
+  color:#000; box-shadow:0 0 20px rgba(34,197,94,.35);
 }
-.mp-play-btn:hover { transform:scale(1.08); box-shadow:0 0 28px rgba(34,197,94,.55); }
-.mp-skip { color:var(--mut); }
-.mp-volume-row { display:flex; align-items:center; gap:10px; }
+.mp-play-btn:hover { transform:scale(1.08); box-shadow:0 0 28px rgba(34,197,94,.5); background:var(--acc); }
+.mp-volume-row { display:flex; align-items:center; gap:10px; padding:0 20px 18px; flex-shrink:0; }
 .mp-volume {
   flex:1; -webkit-appearance:none; height:3px;
   background:var(--s3); border-radius:2px; outline:none; cursor:pointer;
@@ -1148,44 +1093,11 @@ img { -webkit-user-drag:none; user-drag:none; pointer-events:none; }
 
 </div>
 
-<!-- ══ ITUNES PLAYER MODAL ══ -->
-<div id="itunes-modal">
-  <div class="itunes-box">
-    <div class="itunes-header">
-      <div class="itunes-logo">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="white"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-1 14H9V8h2v8zm4 0h-2V8h2v8z"/></svg>
-      </div>
-      <div class="itunes-header-info">
-        <div class="itunes-header-title" id="itunes-title">—</div>
-        <div class="itunes-header-sub" id="itunes-sub">Searching iTunes…</div>
-      </div>
-      <button class="itunes-close" onclick="closeITunes()">✕</button>
-    </div>
-    <div class="itunes-body" id="itunes-body">
-      <div class="itunes-loading"><span class="spin-icon">♪</span>Searching iTunes…</div>
-    </div>
-    <div class="itunes-mini-player" id="itunes-mini">
-      <div class="itunes-mini-info">
-        <div class="itunes-mini-name" id="itunes-mini-name">—</div>
-        <div class="itunes-mini-time" id="itunes-mini-time">30s preview</div>
-      </div>
-      <button class="itunes-mini-stop" onclick="stopPreview()">■ Stop</button>
-    </div>
-    <a class="itunes-open-btn" id="itunes-open-link" href="#" target="_blank" rel="noopener">
-      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
-      Open in iTunes / Apple Music
-    </a>
-  </div>
-</div>
-
-
 <!-- ══ MUSIC PLAYER MODAL ══ -->
 <div id="music-player-modal" onclick="if(event.target===this)closePlayer()">
   <div class="mp-box">
     <div class="mp-top">
-      <div class="mp-art" id="mp-art">
-        <div class="mp-art-placeholder">♪</div>
-      </div>
+      <div class="mp-art" id="mp-art"><div class="mp-art-placeholder">♪</div></div>
       <div class="mp-info">
         <div class="mp-title" id="mp-title">—</div>
         <div class="mp-artist" id="mp-artist">—</div>
@@ -1193,6 +1105,13 @@ img { -webkit-user-drag:none; user-drag:none; pointer-events:none; }
       </div>
       <button class="mp-close" onclick="closePlayer()">✕</button>
     </div>
+    <!-- Tracklist -->
+    <div class="mp-tracklist" id="mp-tracklist">
+      <div class="mp-tl-loading">
+        <span class="mp-spin">↻</span> Fetching tracks from Archive.org…
+      </div>
+    </div>
+    <!-- Progress -->
     <div class="mp-progress-wrap" onclick="seekPlayer(event)">
       <div class="mp-progress-bar">
         <div class="mp-progress-fill" id="mp-fill"></div>
@@ -1201,17 +1120,18 @@ img { -webkit-user-drag:none; user-drag:none; pointer-events:none; }
     </div>
     <div class="mp-times">
       <span id="mp-cur">0:00</span>
+      <span id="mp-track-label" style="font-size:9px;color:var(--mut);flex:1;text-align:center;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;padding:0 8px"></span>
       <span id="mp-dur">—</span>
     </div>
     <div class="mp-controls">
-      <button class="mp-btn mp-skip" onclick="skipPlayer(-15)" title="−15s">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 5V1L7 6l5 5V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/><text x="12" y="14" text-anchor="middle" font-size="6" fill="currentColor">15</text></svg>
+      <button class="mp-btn mp-skip" onclick="prevTrack()" title="Previous">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="19,20 9,12 19,4"/><rect x="5" y="4" width="2" height="16"/></svg>
       </button>
       <button class="mp-btn mp-play-btn" id="mp-play-btn" onclick="togglePlay()">
         <svg id="mp-play-icon" width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>
       </button>
-      <button class="mp-btn mp-skip" onclick="skipPlayer(15)" title="+15s">
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><path d="M12 5V1l5 5-5 5V7c-3.31 0-6 2.69-6 6s2.69 6 6 6 6-2.69 6-6h2c0 4.42-3.58 8-8 8s-8-3.58-8-8 3.58-8 8-8z"/><text x="12" y="14" text-anchor="middle" font-size="6" fill="currentColor">15</text></svg>
+      <button class="mp-btn mp-skip" onclick="nextTrack()" title="Next">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,4 15,12 5,20"/><rect x="17" y="4" width="2" height="16"/></svg>
       </button>
     </div>
     <div class="mp-volume-row">
@@ -1476,6 +1396,7 @@ function normalise(r, i) {
     artwork:   _artKey ? (r[_artKey]||'').trim() : '',
     date:      get(r,'dates','date','Date','Dates','DATE','date added','Date Added','created','Created').trim(),
     music:     get(r,'music','Music','MUSIC','audio','Audio','url','URL','link','Link','mp3','MP3').trim(),
+    tracks:    get(r,'tracks','Tracks','TRACKS','tracklist','Tracklist','TrackList','track list','Track List').trim(),
   };
 }
 
@@ -1577,11 +1498,6 @@ function tapeCard(t, q='') {
   ].filter(Boolean).join('');
   const itA = (t.artist||'').replace(/'/g,"\\'");
   const itB = (t.album||'').replace(/'/g,"\\'");
-  const itunesBtn = (t.artist||t.album) ? `
-    <button class="col-tile-itunes" onclick="event.stopPropagation();openITunes('${itA}','${itB}')" title="Listen on iTunes / Apple Music">
-      <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>
-      iTunes
-    </button>` : '';
   const musicBtn = t.music ? `
     <button class="col-tile-play" onclick="event.stopPropagation();openPlayer('${t.music.replace(/'/g,"\\'")}','${itA}','${itB}','${(fixArtUrl(t.artwork)||'').replace(/'/g,"\\'")}')">
       <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>
@@ -1594,7 +1510,7 @@ function tapeCard(t, q='') {
         <div class="tape-artist">${hi(esc(t.artist))}</div>
         <div class="tape-album">${hi(esc(t.album||'—'))}</div>
         <div class="tape-tags">${tags}</div>
-        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">${musicBtn}${itunesBtn}</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">${musicBtn}</div>
       </div>
     </div>`;
 }
@@ -1842,13 +1758,6 @@ function colTile(t) {
        <div class="col-art-placeholder" style="display:none"><span class="art-initials">${initials}</span><span class="art-ref">#${t.ref}</span></div>`
     : `<div class="col-art-placeholder"><span class="art-initials">${initials}</span><span class="art-ref">#${t.ref}</span></div>`;
 
-  const itunesQuery = encodeURIComponent(`${t.artist||''} ${t.album||''}`.trim());
-  const itunesBtn = (t.artist || t.album) ? `
-    <button class="col-tile-itunes" onclick="event.stopPropagation();openITunes('${(t.artist||'').replace(/'/g,"\\'")}','${(t.album||'').replace(/'/g,"\\'")}')">
-      <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm-2 14.5v-9l6 4.5-6 4.5z"/></svg>
-      iTunes
-    </button>` : '';
-
   const musicBtn = t.music ? `
     <button class="col-tile-play" onclick="event.stopPropagation();openPlayer('${t.music.replace(/'/g,"\\'")}','${(t.artist||'').replace(/'/g,"\\'")}','${(t.album||'—').replace(/'/g,"\\'")}','${(fixArtUrl(t.artwork)||'').replace(/'/g,"\\'")}')">
       <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>
@@ -1862,141 +1771,150 @@ function colTile(t) {
         <div class="col-tile-title" title="${esc(t.album||'—')}">${esc(t.album||'—')}</div>
         <div class="col-tile-sub">${esc(t.artist||'')}${t.label ? ' · '+esc(t.label) : ''}</div>
         <div class="col-tile-tags">${tags}</div>
-        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px">${musicBtn}${itunesBtn}</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px">${musicBtn}</div>
       </div>
     </div>`;
 }
 
 // ═══════════════════════════════════════════════
-// ITUNES SEARCH + PREVIEW
+// MUSIC PLAYER — Archive.org auto-fetch tracks
 // ═══════════════════════════════════════════════
-let _itunesAudio = null;
-let _currentTrackEl = null;
+let _playerAudio   = null;
+let _playerRAF     = null;
+let _playerTracks  = []; // [{name, url, dur}]
+let _playerIdx     = -1;
 
-async function openITunes(artist, album) {
-  closePlayer(); // stop personal player if running
-  const modal = document.getElementById('itunes-modal');
-  modal.classList.add('open');
-  document.getElementById('itunes-title').textContent = album || artist;
-  document.getElementById('itunes-sub').textContent = artist || '';
-  document.getElementById('itunes-body').innerHTML = `<div class="itunes-loading"><span class="spin-icon">♪</span>Searching iTunes…</div>`;
-  document.getElementById('itunes-mini').classList.remove('visible');
-
-  // Build iTunes search URL — try album + artist first
-  const q = encodeURIComponent(`${artist} ${album}`.trim());
-  const url = `https://itunes.apple.com/search?term=${q}&media=music&entity=song&limit=10&country=MA`;
-
-  try {
-    const res = await fetch(url);
-    const data = await res.json();
-    renderITunesResults(data.results || [], artist, album);
-  } catch(e) {
-    document.getElementById('itunes-body').innerHTML =
-      `<div class="itunes-none"><div class="icon">⚠️</div>Could not reach iTunes.<br>Check your connection.</div>`;
-  }
+// Extract Archive.org item identifier from any archive.org URL
+function archiveId(url) {
+  if (!url) return null;
+  const m = url.match(/archive\.org\/(?:details|download|stream)\/([^\/\?#]+)/);
+  return m ? m[1] : null;
 }
 
-function renderITunesResults(tracks, artist, album) {
-  const body = document.getElementById('itunes-body');
-  const link = document.getElementById('itunes-open-link');
-
-  // Set open-in-iTunes link
-  const searchUrl = `https://music.apple.com/search?term=${encodeURIComponent(artist+' '+album)}`;
-  link.href = searchUrl;
-
-  if (!tracks.length) {
-    // Try artist-only fallback
-    body.innerHTML = `<div class="itunes-none"><div class="icon">🎵</div>No results found for this tape.<br><span style="color:var(--mut);font-size:9px">Try opening in Apple Music directly.</span></div>`;
-    return;
-  }
-
-  document.getElementById('itunes-sub').textContent = `${tracks.length} tracks found`;
-
-  body.innerHTML = tracks.map((tr, i) => {
-    const art = (tr.artworkUrl60 || '').replace('60x60', '100x100');
-    const hasPreview = !!tr.previewUrl;
-    return `
-      <div class="itunes-track" id="itrack-${i}" onclick="playPreview('${(tr.previewUrl||'').replace(/'/g,"\\'")}', '${(tr.trackName||'').replace(/'/g,"\\'")}', ${i})">
-        <div class="itunes-track-art">${art ? `<img src="${art}" alt="">` : '🎵'}</div>
-        <div class="itunes-track-info">
-          <div class="itunes-track-name">${esc(tr.trackName||'Unknown')}</div>
-          <div class="itunes-track-album">${esc(tr.collectionName||'')} · ${esc(tr.artistName||'')}</div>
-        </div>
-        <div class="itunes-track-play">${hasPreview ? '▶' : '🔗'}</div>
-      </div>`;
-  }).join('');
-}
-
-function playPreview(previewUrl, trackName, idx) {
-  // If no preview, do nothing (open iTunes link instead)
-  if (!previewUrl) return;
-
-  // Stop current
-  if (_itunesAudio) { _itunesAudio.pause(); _itunesAudio = null; }
-  if (_currentTrackEl) _currentTrackEl.classList.remove('playing');
-
-  const el = document.getElementById(`itrack-${idx}`);
-
-  // If same track clicked again — stop
-  if (_currentTrackEl === el) {
-    _currentTrackEl = null;
-    document.getElementById('itunes-mini').classList.remove('visible');
-    return;
-  }
-
-  _itunesAudio = new Audio(previewUrl);
-  _itunesAudio.play();
-  _currentTrackEl = el;
-  el.classList.add('playing');
-
-  // Mini player
-  const mini = document.getElementById('itunes-mini');
-  document.getElementById('itunes-mini-name').textContent = trackName;
-  mini.classList.add('visible');
-
-  // Auto stop at end
-  _itunesAudio.addEventListener('ended', () => {
-    el.classList.remove('playing');
-    mini.classList.remove('visible');
-    _itunesAudio = null; _currentTrackEl = null;
-  });
-}
-
-function stopPreview() {
-  if (_itunesAudio) { _itunesAudio.pause(); _itunesAudio = null; }
-  if (_currentTrackEl) { _currentTrackEl.classList.remove('playing'); _currentTrackEl = null; }
-  document.getElementById('itunes-mini').classList.remove('visible');
-}
-
-// ═══════════════════════════════════════════════
-// MUSIC PLAYER — personal archive.org library
-// ═══════════════════════════════════════════════
-let _playerAudio = null;
-let _playerRAF   = null;
-
-function openPlayer(url, artist, album, artUrl) {
-  // Stop iTunes preview if playing
-  stopPreview();
-
+async function openPlayer(url, artist, album, artUrl) {
   const modal = document.getElementById('music-player-modal');
   modal.classList.add('open');
 
   document.getElementById('mp-title').textContent  = album  || 'Unknown Album';
   document.getElementById('mp-artist').textContent = artist || 'Unknown Artist';
-  document.getElementById('mp-status').textContent = 'Loading…';
+  document.getElementById('mp-status').textContent = 'Fetching tracks…';
   document.getElementById('mp-fill').style.width   = '0%';
   document.getElementById('mp-thumb').style.left   = '0%';
   document.getElementById('mp-cur').textContent    = '0:00';
   document.getElementById('mp-dur').textContent    = '—';
+  document.getElementById('mp-track-label').textContent = '';
 
   // Artwork
-  const artEl = document.getElementById('mp-art');
-  artEl.innerHTML = artUrl
+  document.getElementById('mp-art').innerHTML = artUrl
     ? `<img src="${esc(artUrl)}" alt="" onerror="this.parentElement.innerHTML='<div class=mp-art-placeholder>♪</div>'">`
     : '<div class="mp-art-placeholder">♪</div>';
 
   // Stop existing audio
   if (_playerAudio) { _playerAudio.pause(); cancelAnimationFrame(_playerRAF); _playerAudio = null; }
+  _playerTracks = []; _playerIdx = -1;
+
+  document.getElementById('mp-tracklist').innerHTML =
+    '<div class="mp-tl-loading"><span class="mp-spin">↻</span> Fetching tracks from Archive.org…</div>';
+
+  // Fetch track list from Archive.org metadata API
+  const id = archiveId(url);
+  if (!id) {
+    showTlError('Invalid Archive.org URL. Paste a link like https://archive.org/details/item-name');
+    return;
+  }
+
+  try {
+    const res = await fetch(`https://archive.org/metadata/${id}`);
+    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const meta = await res.json();
+
+    // Filter audio files: mp3, ogg, flac, m4a — prefer mp3
+    const files = (meta.files || [])
+      .filter(f => /\.(mp3|ogg|flac|m4a|opus)$/i.test(f.name))
+      .filter(f => f.source !== 'metadata')
+      // Prefer mp3 originals, then derivatives
+      .sort((a, b) => {
+        const score = f => f.name.endsWith('.mp3') ? 0 : f.name.endsWith('.ogg') ? 1 : 2;
+        return score(a) - score(b);
+      });
+
+    // De-duplicate: keep one format per base name
+    const seen = new Set();
+    const unique = [];
+    files.forEach(f => {
+      const base = f.name.replace(/\.(mp3|ogg|flac|m4a|opus)$/i, '').toLowerCase();
+      if (!seen.has(base)) { seen.add(base); unique.push(f); }
+    });
+
+    if (!unique.length) {
+      showTlError('No audio files found in this Archive.org item.');
+      return;
+    }
+
+    _playerTracks = unique.map((f, i) => ({
+      name: cleanTrackName(f.name),
+      url:  `https://archive.org/download/${id}/${encodeURIComponent(f.name)}`,
+      dur:  f.length ? fmtTime(parseFloat(f.length)) : '—',
+    }));
+
+    renderTrackList();
+    document.getElementById('mp-status').textContent = `${_playerTracks.length} tracks found`;
+
+    // Auto-play first track
+    playTrack(0);
+
+  } catch(e) {
+    showTlError('Could not load tracks: ' + e.message);
+  }
+}
+
+function cleanTrackName(filename) {
+  return filename
+    .replace(/\.(mp3|ogg|flac|m4a|opus)$/i, '')
+    .replace(/[_-]+/g, ' ')
+    .replace(/^\d+\s*[\.\-]\s*/, '') // remove leading track numbers
+    .trim();
+}
+
+function showTlError(msg) {
+  document.getElementById('mp-tracklist').innerHTML =
+    `<div class="mp-tl-error">⚠ ${msg}</div>`;
+  document.getElementById('mp-status').textContent = 'Error';
+}
+
+function renderTrackList() {
+  document.getElementById('mp-tracklist').innerHTML = _playerTracks.map((t, i) => `
+    <div class="mp-track-row ${i === _playerIdx ? 'active' : ''}" id="mp-tr-${i}" onclick="playTrack(${i})">
+      <div class="mp-track-num">${i === _playerIdx ? '▶' : i+1}</div>
+      <div class="mp-track-info">
+        <div class="mp-track-name">${esc(t.name)}</div>
+        <div class="mp-track-dur">${t.dur}</div>
+      </div>
+      <div class="mp-track-play-icon">▶</div>
+    </div>`).join('');
+}
+
+function playTrack(idx) {
+  if (idx < 0 || idx >= _playerTracks.length) return;
+  _playerIdx = idx;
+
+  if (_playerAudio) { _playerAudio.pause(); cancelAnimationFrame(_playerRAF); }
+
+  const track = _playerTracks[idx];
+  document.getElementById('mp-status').textContent = 'Loading…';
+  document.getElementById('mp-track-label').textContent = track.name;
+  document.getElementById('mp-cur').textContent = '0:00';
+  document.getElementById('mp-dur').textContent = track.dur !== '—' ? track.dur : '…';
+  document.getElementById('mp-fill').style.width = '0%';
+  document.getElementById('mp-thumb').style.left = '0%';
+
+  renderTrackList(); // re-render to show active
+
+  // Scroll active track into view
+  setTimeout(() => {
+    const el = document.getElementById(`mp-tr-${idx}`);
+    if (el) el.scrollIntoView({ behavior:'smooth', block:'nearest' });
+  }, 50);
 
   const audio = new Audio();
   audio.crossOrigin = 'anonymous';
@@ -2005,62 +1923,53 @@ function openPlayer(url, artist, album, artUrl) {
 
   audio.addEventListener('loadedmetadata', () => {
     document.getElementById('mp-dur').textContent = fmtTime(audio.duration);
-    document.getElementById('mp-status').textContent = 'Ready';
+    // Update stored dur
+    _playerTracks[idx].dur = fmtTime(audio.duration);
+    renderTrackList();
   });
-  audio.addEventListener('canplay', () => {
-    audio.play();
-    document.getElementById('mp-status').textContent = 'Playing';
-    setPlayIcon(true);
-    tickPlayer();
+  audio.addEventListener('play', () => {
+    document.getElementById('mp-status').textContent = '▶ ' + track.name;
+    setPlayIcon(true); tickPlayer();
   });
+  audio.addEventListener('pause', () => { setPlayIcon(false); });
   audio.addEventListener('ended', () => {
-    setPlayIcon(false);
-    document.getElementById('mp-status').textContent = 'Finished';
-    cancelAnimationFrame(_playerRAF);
+    setPlayIcon(false); cancelAnimationFrame(_playerRAF);
+    // Auto-play next
+    if (_playerIdx < _playerTracks.length - 1) playTrack(_playerIdx + 1);
+    else { document.getElementById('mp-status').textContent = 'Finished'; _playerIdx = -1; renderTrackList(); }
   });
   audio.addEventListener('error', () => {
-    document.getElementById('mp-status').textContent = '⚠ Could not load audio — check the URL in your sheet';
+    document.getElementById('mp-status').textContent = '⚠ Could not load track';
   });
+  audio.addEventListener('timeupdate', tickPlayer);
 
-  audio.src = url;
+  audio.src = track.url;
   audio.load();
+  audio.play().catch(() => {});
 }
+
+function prevTrack() { if (_playerIdx > 0) playTrack(_playerIdx - 1); }
+function nextTrack() { if (_playerIdx < _playerTracks.length - 1) playTrack(_playerIdx + 1); }
 
 function tickPlayer() {
   const audio = _playerAudio;
-  if (!audio || audio.paused) return;
+  if (!audio) return;
   const pct = audio.duration ? (audio.currentTime / audio.duration) * 100 : 0;
-  document.getElementById('mp-fill').style.width  = pct + '%';
-  document.getElementById('mp-thumb').style.left  = pct + '%';
-  document.getElementById('mp-cur').textContent   = fmtTime(audio.currentTime);
-  _playerRAF = requestAnimationFrame(tickPlayer);
+  document.getElementById('mp-fill').style.width = pct + '%';
+  document.getElementById('mp-thumb').style.left = pct + '%';
+  document.getElementById('mp-cur').textContent  = fmtTime(audio.currentTime);
 }
 
 function togglePlay() {
-  const audio = _playerAudio;
-  if (!audio) return;
-  if (audio.paused) {
-    audio.play();
-    document.getElementById('mp-status').textContent = 'Playing';
-    setPlayIcon(true);
-    tickPlayer();
-  } else {
-    audio.pause();
-    document.getElementById('mp-status').textContent = 'Paused';
-    setPlayIcon(false);
-    cancelAnimationFrame(_playerRAF);
-  }
+  if (!_playerAudio) return;
+  if (_playerAudio.paused) { _playerAudio.play(); tickPlayer(); }
+  else { _playerAudio.pause(); cancelAnimationFrame(_playerRAF); }
 }
 
 function setPlayIcon(playing) {
   document.getElementById('mp-play-icon').outerHTML = playing
     ? `<svg id="mp-play-icon" width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"/><rect x="14" y="4" width="4" height="16"/></svg>`
     : `<svg id="mp-play-icon" width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>`;
-}
-
-function skipPlayer(secs) {
-  if (!_playerAudio) return;
-  _playerAudio.currentTime = Math.max(0, Math.min(_playerAudio.duration || 0, _playerAudio.currentTime + secs));
 }
 
 function seekPlayer(e) {
@@ -2077,6 +1986,7 @@ function setVolume(val) {
 
 function closePlayer() {
   if (_playerAudio) { _playerAudio.pause(); cancelAnimationFrame(_playerRAF); _playerAudio = null; }
+  _playerTracks = []; _playerIdx = -1;
   document.getElementById('music-player-modal').classList.remove('open');
 }
 
@@ -2087,15 +1997,8 @@ function fmtTime(s) {
 }
 
 
-function closeITunes() {
-  stopPreview();
-  document.getElementById('itunes-modal').classList.remove('open');
-}
-
 // Close on backdrop click
-document.getElementById('itunes-modal')?.addEventListener('click', function(e) {
-  if (e.target === this) closeITunes();
-});
+
 
 
 const COLS=['#22c55e','#60a5fa','#a78bfa','#22d3ee','#fb923c','#f472b6','#facc15','#34d399','#818cf8','#f87171','#4ade80','#38bdf8'];
