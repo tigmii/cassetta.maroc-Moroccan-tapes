@@ -2663,24 +2663,27 @@ function clearApiUrl() {
 async function loadAdminTapes() {
   setAdminStatus('loading', '↻ Loading tapes from sheet…');
   try {
-    // SheetDB returns all rows as array of objects keyed by header
     const res  = await fetch(_sheetdbUrl + '?limit=500');
     if (!res.ok) throw new Error('HTTP ' + res.status + ' — check your SheetDB URL');
     const rows = await res.json();
 
     if (!Array.isArray(rows) || rows.length === 0) {
-      setAdminStatus('err', '❌ No data returned — make sure your sheet has data');
+      setAdminStatus('err', '❌ No data returned — make sure your sheet has data and SheetDB points to the right sheet tab');
       return;
     }
 
-    // Extract headers from first row keys (excluding internal SheetDB keys)
-    _adminHeaders = Object.keys(rows[0]).filter(k => k !== 'row_number');
+    // Log first row to debug
+    console.log('SheetDB first row:', rows[0]);
+    console.log('SheetDB headers:', Object.keys(rows[0]));
 
-    // Store tapes with row_number for updates/deletes
+    _adminHeaders  = Object.keys(rows[0]).filter(k => k !== 'row_number' && k.trim() !== '');
     _adminTapes    = rows;
     _adminFiltered = rows;
+
+    console.log('Admin headers detected:', _adminHeaders);
+
     renderAdminTable();
-    setAdminStatus('ok', '✅ ' + rows.length + ' tapes loaded');
+    setAdminStatus('ok', '✅ ' + rows.length + ' tapes loaded — headers: ' + _adminHeaders.slice(0,5).join(', ') + '…');
   } catch(e) {
     setAdminStatus('err', '❌ ' + e.message);
   }
@@ -2721,40 +2724,48 @@ function filterAdminTable() {
 
 // ── Open form ─────────────────────────────────────────────────────
 function openAdminForm(ref) {
-  // ref is null for new, or REF value for edit
   _editingRow = ref || null;
-  const tape  = ref ? _adminTapes.find(t => String(t['REF']) === String(ref)) || {} : {};
+
+  // Find tape — try REF first, then row position
+  let tape = {};
+  if (ref) {
+    tape = _adminTapes.find(t => String(t['REF']) === String(ref))
+        || _adminTapes.find(t => String(t['REF']).trim() === String(ref).trim())
+        || {};
+  }
   const isNew = !ref;
 
   document.getElementById('admin-form-title').textContent = isNew ? '➕ Add New Tape' : '✏️ Edit Tape';
   document.getElementById('admin-delete-btn').style.display = isNew ? 'none' : '';
   document.getElementById('admin-form-modal').classList.add('open');
 
-  const skip = ['REF','dates','date','Date','Dates','row_number'];
-  // YES/not toggle columns
+  const skip = ['row_number'];
   const yesNotCols = ['Digitized','COVER SCAN','ART Work'];
-  // URL columns — show as full-width
-  const urlCols = ['YOUTUBE','INSTAGRAM','WEBARCHIVE','music','ART Work'];
+  const urlCols    = ['YOUTUBE','INSTAGRAM','WEBARCHIVE','music'];
 
   document.getElementById('admin-form-body').innerHTML = _adminHeaders
     .filter(h => !skip.includes(h))
     .map(h => {
       const id       = 'af_' + h.replace(/[^a-z0-9]/gi,'_');
-      const val      = (tape[h] || '').replace(/"/g, '&quot;');
+      const rawVal   = tape[h] !== undefined ? tape[h] : '';
+      const val      = String(rawVal).replace(/"/g, '&quot;');
       const isYesNot = yesNotCols.includes(h);
       const isUrl    = urlCols.some(u => h.toLowerCase().includes(u.toLowerCase()));
-      const isLong   = h.toLowerCase().includes('note') || h.toLowerCase().includes('label');
+      const isLong   = h.toLowerCase().includes('label') || h.toLowerCase().includes('note');
+      const isReadonly = h === 'REF';
 
+      if (isReadonly) return `<div class="admin-field"><label>${esc(h)}</label>
+        <input id="${id}" type="text" value="${val}" readonly style="opacity:.5;cursor:not-allowed"/></div>`;
       if (isYesNot) return `<div class="admin-field"><label>${esc(h)}</label>
         <select id="${id}">
           <option value="">—</option>
-          <option value="YES" ${tape[h]==='YES'?'selected':''}>YES</option>
-          <option value="not" ${tape[h]==='not'?'selected':''}>not</option>
+          <option value="YES" ${rawVal==='YES'?'selected':''}>YES</option>
+          <option value="not" ${rawVal==='not'?'selected':''}>not</option>
         </select></div>`;
       if (isUrl) return `<div class="admin-field full-width"><label>${esc(h)}</label>
-        <input id="${id}" type="url" value="${val}" placeholder="https://…"/></div>`;
+        <input id="${id}" type="text" value="${val}" placeholder="https://…"/></div>`;
       if (isLong) return `<div class="admin-field full-width"><label>${esc(h)}</label>
-        <textarea id="${id}">${esc(tape[h]||'')}</textarea></div>`;
+        <textarea id="${id}">${esc(String(rawVal))}</textarea></div>`;
       return `<div class="admin-field"><label>${esc(h)}</label>
         <input id="${id}" type="text" value="${val}"/></div>`;
     }).join('');
