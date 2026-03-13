@@ -834,24 +834,34 @@ mark { background:rgba(34,197,94,.2); color:var(--acc); border-radius:2px; paddi
 
 .admin-combo { display:flex; gap:6px; align-items:center; }
 .admin-combo input { flex:1; }
-.admin-combo-add {
-  padding:6px 12px; border-radius:6px; border:1px solid var(--acc);
-  background:rgba(34,197,94,.1); color:var(--acc); cursor:pointer;
-  font-size:11px; font-family:var(--fm); white-space:nowrap; flex-shrink:0;
-}
+.admin-combo-add { padding:6px 12px; border-radius:6px; border:1px solid var(--acc); background:rgba(34,197,94,.1); color:var(--acc); cursor:pointer; font-size:11px; font-family:var(--fm); white-space:nowrap; flex-shrink:0; }
 .admin-combo-add:hover { background:rgba(34,197,94,.2); }
-.admin-toggle-row { display:flex; gap:8px; }
-.admin-toggle-opt {
-  flex:1; text-align:center; padding:8px; border-radius:8px;
-  border:1px solid var(--bdr2); cursor:pointer; font-size:12px;
-  font-family:var(--fm); color:var(--mut); transition:all .2s;
+
+/* ── Admin form sections ── */
+.af-section { margin-bottom:18px; }
+.af-section-title { font-family:var(--fm); font-size:10px; letter-spacing:1px; text-transform:uppercase; color:var(--mut); margin-bottom:10px; padding-bottom:6px; border-bottom:1px solid var(--bdr); }
+.af-grid { display:grid; grid-template-columns:1fr 1fr; gap:10px 14px; }
+.af-field { display:flex; flex-direction:column; gap:5px; }
+.af-full { grid-column:1/-1; }
+.af-field label { font-family:var(--fm); font-size:10px; color:var(--mut); letter-spacing:.5px; text-transform:uppercase; }
+.af-field input, .af-field select {
+  background:var(--s2); border:1px solid var(--bdr2); border-radius:8px;
+  padding:8px 12px; color:var(--txt); font-size:12px; font-family:inherit;
 }
-.admin-toggle-opt input[type="radio"] { display:none; }
-.admin-toggle-opt.active,
-.admin-toggle-opt:has(input:checked) {
-  border-color:var(--acc); background:rgba(34,197,94,.12); color:var(--acc); font-weight:600;
-}
-.admin-toggle-opt:hover { border-color:var(--acc); color:var(--txt); }
+.af-field input:focus { outline:none; border-color:var(--acc); }
+.af-combo { display:flex; gap:6px; }
+.af-combo input { flex:1; }
+.af-add { padding:7px 12px; border-radius:8px; border:1px solid var(--acc); background:rgba(34,197,94,.1); color:var(--acc); cursor:pointer; font-size:11px; white-space:nowrap; flex-shrink:0; }
+.af-add:hover { background:rgba(34,197,94,.2); }
+/* YES/not/posted toggles */
+.af-toggle { display:flex; gap:6px; }
+.af-tog { flex:1; text-align:center; padding:7px 4px; border-radius:8px; border:1px solid var(--bdr2); cursor:pointer; font-size:11px; font-family:var(--fm); color:var(--mut); transition:all .15s; user-select:none; }
+.af-tog input { display:none; }
+.af-tog.yes    { border-color:var(--acc); background:rgba(34,197,94,.15); color:var(--acc); font-weight:700; }
+.af-tog.no     { border-color:rgba(239,68,68,.4); background:rgba(239,68,68,.08); color:#ef4444; }
+.af-tog.posted { border-color:rgba(59,130,246,.5); background:rgba(59,130,246,.1); color:#60a5fa; font-weight:700; }
+.af-tog:hover  { border-color:var(--txt2); color:var(--txt); }
+.af-status-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(120px,1fr)); gap:10px; }
 
 /* ── COLLECTION MODE TOGGLE ── */
 .col-mode-bar {
@@ -2638,29 +2648,23 @@ window.addEventListener('DOMContentLoaded', async () => {
 });
 // ═══════════════════════════════════════════════════════════════
 // ADMIN PAGE — powered by SheetDB.io
-// Sheet-like interface with dropdowns
 // ═══════════════════════════════════════════════════════════════
 
 let _sheetdbUrl    = '';
-let _adminHeaders  = [];
 let _adminTapes    = [];
 let _adminFiltered = [];
 let _editingRef    = null;
-
-// Dynamic option lists — built from existing data
-let _artistOptions  = [];
-let _genreOptions   = [];
-let _labelOptions   = [];
+let _artistOptions = [];
+let _labelOptions  = [];
+let _genreOptions  = [];
 
 // ── Init ──────────────────────────────────────────────────────────
 function initAdminPage() {
   const bar = document.getElementById('admin-api-bar');
-  if (_sheetdbUrl) {
-    bar.classList.add('hidden');
-    loadAdminTapes();
-  } else {
+  if (_sheetdbUrl) { bar.classList.add('hidden'); loadAdminTapes(); }
+  else {
     bar.classList.remove('hidden');
-    setAdminStatus('', '');
+    setAdminStatus('','');
     document.getElementById('admin-thead').innerHTML = '';
     document.getElementById('admin-tbody').innerHTML =
       '<tr><td colspan="99" style="text-align:center;padding:40px;color:var(--mut)">Paste your SheetDB URL above to connect</td></tr>';
@@ -2670,183 +2674,177 @@ function initAdminPage() {
 function saveApiUrl() {
   const val = document.getElementById('admin-api-input').value.trim();
   if (!val || !val.includes('sheetdb.io')) {
-    document.getElementById('admin-api-status').style.color = '#ef4444';
-    document.getElementById('admin-api-status').textContent = '⚠ Paste a SheetDB URL — https://sheetdb.io/api/v1/XXXXXXXX';
+    document.getElementById('admin-api-status').style.color='#ef4444';
+    document.getElementById('admin-api-status').textContent='⚠ Needs a sheetdb.io URL';
     return;
   }
   _sheetdbUrl = val.replace(/\/$/, '');
   document.getElementById('admin-api-bar').classList.add('hidden');
   loadAdminTapes();
 }
-
 function clearApiUrl() {
-  _sheetdbUrl = '';
-  document.getElementById('admin-api-input').value = '';
+  _sheetdbUrl=''; document.getElementById('admin-api-input').value='';
   document.getElementById('admin-api-bar').classList.remove('hidden');
-  setAdminStatus('', '');
+  setAdminStatus('','');
 }
 
-// ── Load tapes ────────────────────────────────────────────────────
+// ── Load ──────────────────────────────────────────────────────────
 async function loadAdminTapes() {
-  setAdminStatus('loading', '↻ Loading…');
+  setAdminStatus('loading','↻ Loading…');
   try {
-    const res  = await fetch(_sheetdbUrl + '?limit=500');
-    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const res = await fetch(_sheetdbUrl+'?limit=500');
+    if (!res.ok) throw new Error('HTTP '+res.status);
     const rows = await res.json();
-    if (!Array.isArray(rows) || !rows.length) throw new Error('No data returned');
-
-    _adminHeaders  = Object.keys(rows[0]).filter(k => k !== 'row_number' && k.trim());
-    _adminTapes    = rows;
-    _adminFiltered = rows;
-
-    // Build dynamic option lists from existing data
-    _artistOptions = [...new Set(rows.map(r => r['Artist']).filter(Boolean))].sort();
-    _genreOptions  = [...new Set(rows.flatMap(r => (r['Genre / Category']||'').split(/[,\s]+/).filter(Boolean)))].sort();
-    _labelOptions  = [...new Set(rows.map(r => r['Label / Notes']).filter(Boolean))].sort();
-
+    if (!Array.isArray(rows)||!rows.length) throw new Error('No data');
+    _adminTapes = rows; _adminFiltered = rows;
+    // Build option lists from existing data
+    _artistOptions = [...new Set(rows.map(r=>r['Artist']).filter(Boolean))].sort();
+    _labelOptions  = [...new Set(rows.map(r=>r['Label / Notes']).filter(Boolean))].sort();
+    _genreOptions  = [...new Set(rows.flatMap(r=>(r['Genre / Category']||'').split(/,\s*/)).filter(Boolean))].sort();
     renderAdminTable();
-    setAdminStatus('ok', '✅ ' + rows.length + ' tapes loaded');
-  } catch(e) {
-    setAdminStatus('err', '❌ ' + e.message);
-  }
+    setAdminStatus('ok','✅ '+rows.length+' tapes loaded');
+  } catch(e) { setAdminStatus('err','❌ '+e.message); }
 }
 
-// ── Render table ──────────────────────────────────────────────────
+// ── Table ─────────────────────────────────────────────────────────
 function renderAdminTable() {
-  const cols = ['REF','Artist','Album / Title','Genre / Category','Label / Notes','Digitized'];
-  const visibleH = cols.filter(c => _adminHeaders.some(h => h === c));
-
-  document.getElementById('admin-thead').innerHTML = '<tr>' +
-    visibleH.map(h => `<th>${esc(h)}</th>`).join('') + '<th>Edit</th></tr>';
-
-  document.getElementById('admin-tbody').innerHTML = _adminFiltered.map(t => {
-    const ref   = t['REF'] || '';
-    const cells = visibleH.map(h => {
-      const v = t[h] || '';
-      const style = h === 'Digitized'
-        ? `style="color:${v==='YES'?'var(--acc)':'var(--red, #ef4444)'}"`
-        : '';
-      return `<td ${style} title="${esc(v)}">${esc(v)}</td>`;
-    }).join('');
+  const heads = ['REF','Artist','Album / Title','Genre / Category','Label / Notes','COVER SCAN','Digitized'];
+  document.getElementById('admin-thead').innerHTML = '<tr>'+
+    heads.map(h=>`<th>${esc(h)}</th>`).join('')+'<th></th></tr>';
+  document.getElementById('admin-tbody').innerHTML = _adminFiltered.map(t=>{
+    const ref = t['REF']||'';
     return `<tr>
-      ${cells}
-      <td class="admin-td-actions">
-        <button class="admin-edit-btn" onclick="openAdminForm('${ref}')">✏️ Edit</button>
-      </td>
+      <td style="color:var(--mut);font-size:11px">${esc(ref)}</td>
+      <td style="font-weight:600">${esc(t['Artist']||'')}</td>
+      <td>${esc(t['Album / Title']||'')}</td>
+      <td style="font-size:10px;color:var(--mut)">${esc(t['Genre / Category']||'')}</td>
+      <td style="font-size:11px">${esc(t['Label / Notes']||'')}</td>
+      <td style="text-align:center"><span style="color:${t['COVER SCAN']==='YES'?'var(--acc)':'var(--mut)'}">${t['COVER SCAN']||'—'}</span></td>
+      <td style="text-align:center"><span style="color:${t['Digitized']==='YES'?'var(--acc)':'var(--mut)'}">${t['Digitized']||'—'}</span></td>
+      <td class="admin-td-actions"><button class="admin-edit-btn" onclick="openAdminForm('${ref}')">✏️ Edit</button></td>
     </tr>`;
-  }).join('') || '<tr><td colspan="99" style="text-align:center;padding:32px;color:var(--mut)">No tapes found</td></tr>';
+  }).join('')||'<tr><td colspan="99" style="text-align:center;padding:32px;color:var(--mut)">No tapes</td></tr>';
 }
 
 function filterAdminTable() {
   const q = document.getElementById('admin-search-input').value.toLowerCase().trim();
-  _adminFiltered = q
-    ? _adminTapes.filter(t => Object.values(t).some(v => String(v).toLowerCase().includes(q)))
-    : _adminTapes;
+  _adminFiltered = q ? _adminTapes.filter(t=>Object.values(t).some(v=>String(v).toLowerCase().includes(q))) : _adminTapes;
   renderAdminTable();
 }
 
-// ── Open form — sheet-like ────────────────────────────────────────
+// ── Form ──────────────────────────────────────────────────────────
 function openAdminForm(ref) {
-  _editingRef = ref || null;
-  const tape  = ref ? (_adminTapes.find(t => String(t['REF']) === String(ref)) || {}) : {};
+  _editingRef = ref||null;
+  const t = ref ? (_adminTapes.find(x=>String(x['REF'])===String(ref))||{}) : {};
   const isNew = !ref;
-
-  document.getElementById('admin-form-title').textContent = isNew ? '➕ Add New Tape' : '✏️ Edit Tape — #' + ref;
-  document.getElementById('admin-delete-btn').style.display = isNew ? 'none' : '';
+  document.getElementById('admin-form-title').textContent = isNew ? '➕ Add New Tape' : '✏️ Edit Tape #'+ref;
+  document.getElementById('admin-delete-btn').style.display = isNew?'none':'';
   document.getElementById('admin-form-modal').classList.add('open');
 
-  // Build form — mimics sheet columns
+  // helpers
+  const yn = (name, val) => `
+    <div class="af-toggle">
+      <label class="af-tog ${val==='YES'?'yes':''}"><input type="radio" name="${name}" value="YES" ${val==='YES'?'checked':''}> YES</label>
+      <label class="af-tog ${val==='not'||!val?'no':''}"><input type="radio" name="${name}" value="not" ${val==='not'||!val?'checked':''}> not</label>
+    </div>`;
+  const np = (name, val) => `
+    <div class="af-toggle">
+      <label class="af-tog ${val==='posted'?'posted':''}"><input type="radio" name="${name}" value="posted" ${val==='posted'?'checked':''}> posted</label>
+      <label class="af-tog ${val==='not'||!val?'no':''}"><input type="radio" name="${name}" value="not" ${val==='not'||!val?'checked':''}> not</label>
+    </div>`;
+
   document.getElementById('admin-form-body').innerHTML = `
+  <div class="af-section"><div class="af-section-title">📼 Tape Info</div>
+    <div class="af-grid">
 
-    <div class="admin-field"><label>Artist</label>
-      <div class="admin-combo">
-        <input id="af_Artist" list="list_artist" type="text" value="${esc(tape['Artist']||'')}" placeholder="Type or select artist…"/>
-        <datalist id="list_artist">${_artistOptions.map(a=>`<option value="${esc(a)}">`).join('')}</datalist>
-        <button class="admin-combo-add" onclick="addOption('af_Artist','list_artist','_artistOptions','New artist name:')">+ New</button>
+      <div class="af-field af-full">
+        <label>Artist</label>
+        <div class="af-combo">
+          <input id="af_artist" list="dl_artist" value="${esc(t['Artist']||'')}" placeholder="Type or select…"/>
+          <datalist id="dl_artist">${_artistOptions.map(a=>`<option value="${esc(a)}">`).join('')}</datalist>
+          <button class="af-add" onclick="afAddNew('af_artist','dl_artist','_artistOptions')">+ New</button>
+        </div>
+      </div>
+
+      <div class="af-field af-full">
+        <label>Album / Title</label>
+        <input id="af_album" type="text" value="${esc(t['Album / Title']||'')}" placeholder="Album or tape title…"/>
+      </div>
+
+      <div class="af-field af-full">
+        <label>Genre / Category <span style="font-weight:400;color:var(--mut)">(comma-separated)</span></label>
+        <div class="af-combo">
+          <input id="af_genre" list="dl_genre" value="${esc(t['Genre / Category']||'')}" placeholder="e.g. Pop, Rock, Amazigh Fusion"/>
+          <datalist id="dl_genre">${_genreOptions.map(g=>`<option value="${esc(g)}">`).join('')}</datalist>
+          <button class="af-add" onclick="afAddNew('af_genre','dl_genre','_genreOptions')">+ New</button>
+        </div>
+      </div>
+
+      <div class="af-field af-full">
+        <label>Label / Notes</label>
+        <div class="af-combo">
+          <input id="af_label" list="dl_label" value="${esc(t['Label / Notes']||'')}" placeholder="Label name…"/>
+          <datalist id="dl_label">${_labelOptions.map(l=>`<option value="${esc(l)}">`).join('')}</datalist>
+          <button class="af-add" onclick="afAddNew('af_label','dl_label','_labelOptions')">+ New</button>
+        </div>
+      </div>
+
+    </div>
+  </div>
+
+  <div class="af-section"><div class="af-section-title">✅ Status</div>
+    <div class="af-status-grid">
+      <div class="af-field"><label>COVER SCAN</label>${yn('af_coverscan', t['COVER SCAN'])}</div>
+      <div class="af-field"><label>Digitized</label>${yn('af_digitized', t['Digitized'])}</div>
+      <div class="af-field"><label>YOUTUBE</label>${np('af_youtube_s', t['YOUTUBE'])}</div>
+      <div class="af-field"><label>INSTAGRAM</label>${np('af_instagram_s', t['INSTAGRAM'])}</div>
+      <div class="af-field"><label>WEBARCHIVE</label>${np('af_webarchive_s', t['WEBARCHIVE'])}</div>
+    </div>
+  </div>
+
+  <div class="af-section"><div class="af-section-title">🔗 Links & Media</div>
+    <div class="af-grid">
+      <div class="af-field af-full"><label>ART Work URL</label>
+        <input id="af_artwork" type="text" value="${esc(t['ART Work']||'')}" placeholder="https://raw.githubusercontent.com/…"/>
+      </div>
+      <div class="af-field af-full"><label>YOUTUBE URL</label>
+        <input id="af_youtube_url" type="text" value="${esc(t['YOUTUBE']||'')}" placeholder="https://youtube.com/…"/>
+      </div>
+      <div class="af-field af-full"><label>INSTAGRAM URL</label>
+        <input id="af_instagram_url" type="text" value="${esc(t['INSTAGRAM']||'')}" placeholder="https://instagram.com/…"/>
+      </div>
+      <div class="af-field af-full"><label>WEBARCHIVE URL</label>
+        <input id="af_webarchive_url" type="text" value="${esc(t['WEBARCHIVE']||'')}" placeholder="https://archive.org/details/…"/>
+      </div>
+      <div class="af-field af-full"><label>Music (Archive.org)</label>
+        <input id="af_music" type="text" value="${esc(t['music']||t['Music']||'')}" placeholder="https://archive.org/details/…"/>
       </div>
     </div>
+  </div>`;
 
-    <div class="admin-field"><label>Album / Title</label>
-      <input id="af_Album" type="text" value="${esc(tape['Album / Title']||'')}" placeholder="Album or tape title…"/>
-    </div>
-
-    <div class="admin-field full-width"><label>Genre / Category</label>
-      <div class="admin-combo">
-        <input id="af_Genre" list="list_genre" type="text" value="${esc(tape['Genre / Category']||'')}" placeholder="e.g. Pop  Amazigh  Folk Music…"/>
-        <datalist id="list_genre">${_genreOptions.map(g=>`<option value="${esc(g)}">`).join('')}</datalist>
-        <button class="admin-combo-add" onclick="addOption('af_Genre','list_genre','_genreOptions','New genre:')">+ New</button>
-      </div>
-    </div>
-
-    <div class="admin-field full-width"><label>Label / Notes</label>
-      <div class="admin-combo">
-        <input id="af_Label" list="list_label" type="text" value="${esc(tape['Label / Notes']||'')}" placeholder="Label name…"/>
-        <datalist id="list_label">${_labelOptions.map(l=>`<option value="${esc(l)}">`).join('')}</datalist>
-        <button class="admin-combo-add" onclick="addOption('af_Label','list_label','_labelOptions','New label name:')">+ New</button>
-      </div>
-    </div>
-
-    <div class="admin-field"><label>Digitized</label>
-      <div class="admin-toggle-row">
-        <label class="admin-toggle-opt ${tape['Digitized']==='YES'?'active':''}">
-          <input type="radio" name="af_Digitized" value="YES" ${tape['Digitized']==='YES'?'checked':''}/> YES
-        </label>
-        <label class="admin-toggle-opt ${tape['Digitized']==='not'||!tape['Digitized']?'active':''}">
-          <input type="radio" name="af_Digitized" value="not" ${tape['Digitized']==='not'||!tape['Digitized']?'checked':''}/> not
-        </label>
-      </div>
-    </div>
-
-    <div class="admin-field"><label>COVER SCAN</label>
-      <div class="admin-toggle-row">
-        <label class="admin-toggle-opt ${tape['COVER SCAN']==='YES'?'active':''}">
-          <input type="radio" name="af_CoverScan" value="YES" ${tape['COVER SCAN']==='YES'?'checked':''}/> YES
-        </label>
-        <label class="admin-toggle-opt ${tape['COVER SCAN']==='not'||!tape['COVER SCAN']?'active':''}">
-          <input type="radio" name="af_CoverScan" value="not" ${tape['COVER SCAN']==='not'||!tape['COVER SCAN']?'checked':''}/> not
-        </label>
-      </div>
-    </div>
-
-    <div class="admin-field full-width"><label>ART Work (image URL)</label>
-      <input id="af_ArtWork" type="text" value="${esc(tape['ART Work']||'')}" placeholder="https://raw.githubusercontent.com/…"/>
-    </div>
-
-    <div class="admin-field full-width"><label>YOUTUBE</label>
-      <input id="af_Youtube" type="text" value="${esc(tape['YOUTUBE']||'')}" placeholder="https://youtube.com/…"/>
-    </div>
-
-    <div class="admin-field full-width"><label>INSTAGRAM</label>
-      <input id="af_Instagram" type="text" value="${esc(tape['INSTAGRAM']||'')}" placeholder="https://instagram.com/…"/>
-    </div>
-
-    <div class="admin-field full-width"><label>WEBARCHIVE</label>
-      <input id="af_Webarchive" type="text" value="${esc(tape['WEBARCHIVE']||'')}" placeholder="https://archive.org/details/…"/>
-    </div>
-
-    <div class="admin-field full-width"><label>Music (Archive.org link)</label>
-      <input id="af_Music" type="text" value="${esc(tape['music']||tape['Music']||'')}" placeholder="https://archive.org/details/…"/>
-    </div>
-
-  `;
+  // Live toggle highlight
+  document.querySelectorAll('.af-tog input').forEach(inp => {
+    inp.addEventListener('change', () => {
+      const group = inp.closest('.af-toggle');
+      group.querySelectorAll('.af-tog').forEach(l => {
+        l.classList.remove('yes','no','posted');
+        if (l.querySelector('input').checked) {
+          if (inp.value==='YES') l.classList.add('yes');
+          else if (inp.value==='not') l.classList.add('no');
+          else if (inp.value==='posted') l.classList.add('posted');
+        }
+      });
+    });
+  });
 }
 
-// ── Add new option to a datalist ─────────────────────────────────
-function addOption(inputId, listId, arrName, prompt) {
-  const val = window.prompt(prompt);
-  if (!val || !val.trim()) return;
+function afAddNew(inputId, listId, arrName) {
+  const val = window.prompt('Enter new value:');
+  if (!val||!val.trim()) return;
   const clean = val.trim();
-  // Add to global array
-  window[arrName] = window[arrName] || [];
   if (!window[arrName].includes(clean)) window[arrName].push(clean);
-  // Add to datalist
   const dl = document.getElementById(listId);
-  if (dl) {
-    const opt = document.createElement('option');
-    opt.value = clean;
-    dl.appendChild(opt);
-  }
-  // Set input value
+  if (dl) { const o=document.createElement('option'); o.value=clean; dl.appendChild(o); }
   const inp = document.getElementById(inputId);
   if (inp) inp.value = clean;
 }
@@ -2859,76 +2857,73 @@ function closeAdminForm() {
 // ── Save ──────────────────────────────────────────────────────────
 async function saveTape() {
   if (!_sheetdbUrl) { setAdminStatus('err','❌ No SheetDB URL'); return; }
+  const g = id => { const e=document.getElementById(id); return e?e.value:''; };
+  const r = n  => { const e=document.querySelector(`input[name="${n}"]:checked`); return e?e.value:''; };
 
-  const g = id => { const el = document.getElementById(id); return el ? el.value : ''; };
-  const r = name => { const el = document.querySelector(`input[name="${name}"]:checked`); return el ? el.value : ''; };
+  // For status fields: if URL filled → use "posted", else use toggle value
+  const ytUrl  = g('af_youtube_url');
+  const igUrl  = g('af_instagram_url');
+  const waUrl  = g('af_webarchive_url');
 
   const data = {
-    'Artist':           g('af_Artist'),
-    'Album / Title':    g('af_Album'),
-    'Genre / Category': g('af_Genre'),
-    'Label / Notes':    g('af_Label'),
-    'Digitized':        r('af_Digitized'),
-    'COVER SCAN':       r('af_CoverScan'),
-    'ART Work':         g('af_ArtWork'),
-    'YOUTUBE':          g('af_Youtube'),
-    'INSTAGRAM':        g('af_Instagram'),
-    'WEBARCHIVE':       g('af_Webarchive'),
-    'music':            g('af_Music'),
+    'Artist':           g('af_artist'),
+    'Album / Title':    g('af_album'),
+    'Genre / Category': g('af_genre'),
+    'Label / Notes':    g('af_label'),
+    'COVER SCAN':       r('af_coverscan'),
+    'Digitized':        r('af_digitized'),
+    'YOUTUBE':          ytUrl ? 'posted' : r('af_youtube_s'),
+    'INSTAGRAM':        igUrl ? 'posted' : r('af_instagram_s'),
+    'WEBARCHIVE':       waUrl ? 'posted' : r('af_webarchive_s'),
+    'ART Work':         g('af_artwork'),
+    'YOUTUBE':          ytUrl||r('af_youtube_s'),
+    'INSTAGRAM':        igUrl||r('af_instagram_s'),
+    'WEBARCHIVE':       waUrl||r('af_webarchive_s'),
+    'music':            g('af_music'),
   };
 
   const isNew = !_editingRef;
-  setAdminStatus('loading', isNew ? '↻ Adding tape…' : '↻ Saving…');
-
+  setAdminStatus('loading', isNew?'↻ Adding tape…':'↻ Saving…');
   try {
     let res;
     if (isNew) {
-      const maxRef = _adminTapes.reduce((m, t) => Math.max(m, parseInt(t['REF'])||0), 0);
-      data['REF']   = String(maxRef + 1);
+      const maxRef = _adminTapes.reduce((m,t)=>Math.max(m,parseInt(t['REF'])||0),0);
+      data['REF']   = String(maxRef+1);
       data['dates'] = new Date().toLocaleDateString('en-US');
       res = await fetch(_sheetdbUrl, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ data: [data] })
+        method:'POST', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({data:[data]})
       });
     } else {
-      res = await fetch(_sheetdbUrl + '/REF/' + encodeURIComponent(_editingRef), {
-        method: 'PATCH',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ data })
+      res = await fetch(_sheetdbUrl+'/REF/'+encodeURIComponent(_editingRef), {
+        method:'PATCH', headers:{'Content-Type':'application/json'},
+        body: JSON.stringify({data})
       });
     }
-    if (!res.ok) throw new Error('HTTP ' + res.status);
+    if (!res.ok) throw new Error('HTTP '+res.status);
     closeAdminForm();
-    setAdminStatus('ok', isNew ? '✅ Tape added!' : '✅ Tape saved!');
-    await loadAdminTapes();
-    await loadData();
-  } catch(e) {
-    setAdminStatus('err', '❌ ' + e.message);
-  }
+    setAdminStatus('ok', isNew?'✅ Tape added!':'✅ Saved!');
+    await loadAdminTapes(); await loadData();
+  } catch(e) { setAdminStatus('err','❌ '+e.message); }
 }
 
 // ── Delete ────────────────────────────────────────────────────────
 async function deleteTape() {
   if (!_editingRef) return;
-  if (!confirm('Delete tape #' + _editingRef + ' permanently?')) return;
+  if (!confirm('Delete tape #'+_editingRef+'?')) return;
   setAdminStatus('loading','↻ Deleting…');
   try {
-    const res = await fetch(_sheetdbUrl + '/REF/' + encodeURIComponent(_editingRef), { method: 'DELETE' });
-    if (!res.ok) throw new Error('HTTP ' + res.status);
+    const res = await fetch(_sheetdbUrl+'/REF/'+encodeURIComponent(_editingRef),{method:'DELETE'});
+    if (!res.ok) throw new Error('HTTP '+res.status);
     closeAdminForm();
     setAdminStatus('ok','✅ Deleted');
-    await loadAdminTapes();
-    await loadData();
-  } catch(e) {
-    setAdminStatus('err','❌ ' + e.message);
-  }
+    await loadAdminTapes(); await loadData();
+  } catch(e) { setAdminStatus('err','❌ '+e.message); }
 }
 
 function setAdminStatus(type, msg) {
   const el = document.getElementById('admin-status');
-  el.className = 'admin-status ' + type;
-  el.textContent = msg;
+  el.className='admin-status '+type; el.textContent=msg;
 }
 </script>
 </body>
