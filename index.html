@@ -1165,9 +1165,18 @@ img { -webkit-user-drag:none; user-drag:none; pointer-events:none; }
 
     <!-- API config banner -->
     <div class="admin-api-bar" id="admin-api-bar">
-      <span>⚙ Sheet API URL not set.</span>
-      <input id="admin-api-input" type="text" placeholder="Paste your Google Apps Script Web App URL here…" />
-      <button onclick="saveApiUrl()">Save</button>
+      <div style="flex:1;min-width:0">
+        <div style="font-size:12px;font-weight:600;margin-bottom:6px">⚙ Step 1 — Connect to your Google Sheet</div>
+        <div style="font-size:10px;color:rgba(255,200,0,.7);margin-bottom:10px">
+          In Google Sheets → Extensions → Apps Script → Deploy as Web App → copy the URL and paste below
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <input id="admin-api-input" type="text" placeholder="https://script.google.com/macros/s/…/exec" style="flex:1;min-width:280px"/>
+          <button onclick="saveApiUrl()">Connect</button>
+          <button onclick="clearApiUrl()" style="opacity:.6">Reset</button>
+        </div>
+        <div id="admin-api-status" style="margin-top:6px;font-size:10px"></div>
+      </div>
     </div>
 
     <!-- Toolbar -->
@@ -2611,11 +2620,11 @@ window.addEventListener('DOMContentLoaded', async () => {
 // ═══════════════════════════════════════════════════════════════
 
 const SHEET_API_KEY = 'cassettemaroc_secret_2024'; // must match SheetAPI.gs
-let _adminApiUrl   = localStorage.getItem('cassette_api_url') || '';
+let _adminApiUrl   = '';  // set by user each session
 let _adminHeaders  = [];
 let _adminTapes    = [];
 let _adminFiltered = [];
-let _editingRow    = null; // null = new, number = existing row index
+let _editingRow    = null;
 
 // ── Show/hide API bar ─────────────────────────────────────────────
 function initAdminPage() {
@@ -2625,16 +2634,31 @@ function initAdminPage() {
     loadAdminTapes();
   } else {
     bar.classList.remove('hidden');
+    setAdminStatus('', '');
+    // Show helpful message in table area
+    document.getElementById('admin-thead').innerHTML = '';
+    document.getElementById('admin-tbody').innerHTML =
+      '<tr><td colspan="99" style="text-align:center;padding:40px;color:var(--mut)">Paste your Google Apps Script URL above to connect</td></tr>';
   }
 }
 
 function saveApiUrl() {
   const val = document.getElementById('admin-api-input').value.trim();
-  if (!val) return;
+  if (!val || !val.includes('script.google.com')) {
+    document.getElementById('admin-api-status').style.color = '#ef4444';
+    document.getElementById('admin-api-status').textContent = '⚠ That doesn\'t look like a Google Apps Script URL';
+    return;
+  }
   _adminApiUrl = val;
-  localStorage.setItem('cassette_api_url', val);
   document.getElementById('admin-api-bar').classList.add('hidden');
   loadAdminTapes();
+}
+
+function clearApiUrl() {
+  _adminApiUrl = '';
+  document.getElementById('admin-api-input').value = '';
+  document.getElementById('admin-api-bar').classList.remove('hidden');
+  setAdminStatus('', '');
 }
 
 // ── Load tapes from sheet ─────────────────────────────────────────
