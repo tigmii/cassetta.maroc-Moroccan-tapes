@@ -3,7 +3,14 @@
 <head>
 <meta charset="UTF-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0"/>
-<title>Cassette Maroc Data</title>
+<title>Cassette Maroc</title>
+<!-- PWA — makes it a native-feeling app on iPhone -->
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Cassette Maroc">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#0a0a0f">
+<link rel="manifest" href="manifest.json">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Mono:wght@400;700&family=Syne:wght@700;800&display=swap" rel="stylesheet"/>
 <style>
 :root {
@@ -589,6 +596,17 @@ mark { background:rgba(34,197,94,.2); color:var(--acc); border-radius:2px; paddi
 }
 .col-tile-play:hover { background:rgba(34,197,94,.22); border-color:var(--acc); }
 
+/* ── YOUTUBE MUSIC BUTTON ── */
+.col-tile-ytm {
+  display:inline-flex; align-items:center; gap:5px;
+  padding:4px 10px; border-radius:6px;
+  background:rgba(255,0,0,.08); border:1px solid rgba(255,0,0,.25);
+  color:#ff4444; font-family:var(--fm); font-size:9px;
+  letter-spacing:.8px; text-transform:uppercase;
+  cursor:pointer; transition:all .2s; text-decoration:none;
+}
+.col-tile-ytm:hover { background:rgba(255,0,0,.16); border-color:#ff4444; }
+
 /* ── MUSIC PLAYER MODAL ── */
 #music-player-modal {
   display:none; position:fixed; inset:0; z-index:9000;
@@ -705,6 +723,113 @@ mark { background:rgba(34,197,94,.2); color:var(--acc); border-radius:2px; paddi
 .mp-volume::-webkit-slider-thumb {
   -webkit-appearance:none; width:12px; height:12px;
   background:var(--acc); border-radius:50%; cursor:pointer;
+}
+
+/* ── ADMIN PAGE ── */
+.admin-wrap { padding:24px; max-width:1200px; margin:0 auto; }
+.admin-api-bar {
+  background:rgba(255,200,0,.08); border:1px solid rgba(255,200,0,.3);
+  border-radius:10px; padding:12px 16px; margin-bottom:16px;
+  display:flex; align-items:center; gap:10px; flex-wrap:wrap;
+  font-family:var(--fm); font-size:11px; color:#ffd700;
+}
+.admin-api-bar.hidden { display:none; }
+.admin-api-bar input {
+  flex:1; min-width:260px; background:var(--s2); border:1px solid var(--bdr2);
+  border-radius:6px; padding:6px 10px; color:var(--txt); font-size:11px;
+}
+.admin-api-bar button {
+  background:rgba(255,200,0,.15); border:1px solid rgba(255,200,0,.4);
+  color:#ffd700; border-radius:6px; padding:6px 14px; cursor:pointer;
+  font-size:11px; font-family:var(--fm);
+}
+.admin-toolbar {
+  display:flex; justify-content:space-between; align-items:center;
+  gap:12px; margin-bottom:16px; flex-wrap:wrap;
+}
+.admin-toolbar-left, .admin-toolbar-right { display:flex; gap:8px; align-items:center; }
+.admin-search {
+  background:var(--s2); border:1px solid var(--bdr2); border-radius:8px;
+  padding:8px 14px; color:var(--txt); font-size:13px; width:240px;
+}
+.admin-btn {
+  padding:8px 16px; border-radius:8px; border:1px solid var(--bdr2);
+  background:var(--s2); color:var(--txt); font-size:12px;
+  cursor:pointer; transition:all .2s; font-family:var(--fm);
+}
+.admin-btn:hover { background:var(--s3); }
+.admin-btn-primary { background:var(--acc); border-color:var(--acc); color:#000; font-weight:600; }
+.admin-btn-primary:hover { background:#16a34a; }
+.admin-btn-danger { background:rgba(239,68,68,.15); border-color:rgba(239,68,68,.4); color:#ef4444; }
+.admin-btn-danger:hover { background:rgba(239,68,68,.25); }
+.admin-status {
+  font-family:var(--fm); font-size:11px; padding:8px 14px; margin-bottom:12px;
+  border-radius:8px; display:none;
+}
+.admin-status.ok  { background:rgba(34,197,94,.1); color:var(--acc); display:block; border:1px solid rgba(34,197,94,.2); }
+.admin-status.err { background:rgba(239,68,68,.1); color:#ef4444; display:block; border:1px solid rgba(239,68,68,.2); }
+.admin-status.loading { background:rgba(255,255,255,.04); color:var(--mut); display:block; }
+.admin-table-wrap { overflow-x:auto; border-radius:12px; border:1px solid var(--bdr); }
+.admin-table { width:100%; border-collapse:collapse; font-size:12px; }
+.admin-table thead th {
+  background:var(--s2); padding:10px 14px; text-align:left;
+  font-family:var(--fm); font-size:10px; letter-spacing:.8px;
+  text-transform:uppercase; color:var(--mut); white-space:nowrap;
+  border-bottom:1px solid var(--bdr);
+}
+.admin-table tbody tr { border-bottom:1px solid var(--bdr); transition:background .15s; }
+.admin-table tbody tr:last-child { border-bottom:none; }
+.admin-table tbody tr:hover { background:var(--s2); cursor:pointer; }
+.admin-table td { padding:10px 14px; color:var(--txt2); max-width:180px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; vertical-align:middle; }
+.admin-table td.admin-td-actions { white-space:nowrap; }
+.admin-edit-btn {
+  background:none; border:1px solid var(--bdr2); border-radius:6px;
+  color:var(--mut); padding:4px 10px; cursor:pointer; font-size:10px;
+  font-family:var(--fm); transition:all .15s;
+}
+.admin-edit-btn:hover { color:var(--acc); border-color:var(--acc); }
+
+/* Admin form modal */
+#admin-form-modal {
+  display:none; position:fixed; inset:0; z-index:9100;
+  background:rgba(0,0,0,.8); backdrop-filter:blur(8px);
+  align-items:center; justify-content:center;
+}
+#admin-form-modal.open { display:flex; }
+.admin-form-box {
+  background:#13131a; border:1px solid var(--bdr2); border-radius:18px;
+  width:560px; max-width:95vw; max-height:90vh;
+  display:flex; flex-direction:column; box-shadow:0 24px 60px rgba(0,0,0,.7);
+}
+.admin-form-header {
+  display:flex; align-items:center; justify-content:space-between;
+  padding:18px 22px; border-bottom:1px solid var(--bdr); flex-shrink:0;
+}
+.admin-form-header h3 { font-size:15px; color:var(--txt); margin:0; }
+.admin-form-close {
+  background:rgba(255,255,255,.07); border:none; color:var(--mut);
+  width:26px; height:26px; border-radius:50%; cursor:pointer; font-size:11px;
+  display:flex; align-items:center; justify-content:center;
+}
+.admin-form-body {
+  flex:1; overflow-y:auto; padding:18px 22px;
+  display:grid; grid-template-columns:1fr 1fr; gap:12px 16px;
+}
+.admin-field { display:flex; flex-direction:column; gap:4px; }
+.admin-field.full-width { grid-column:1 / -1; }
+.admin-field label { font-family:var(--fm); font-size:10px; color:var(--mut); letter-spacing:.6px; text-transform:uppercase; }
+.admin-field input, .admin-field select, .admin-field textarea {
+  background:var(--s2); border:1px solid var(--bdr2); border-radius:8px;
+  padding:8px 12px; color:var(--txt); font-size:12px; font-family:inherit;
+  transition:border-color .2s;
+}
+.admin-field input:focus, .admin-field select:focus, .admin-field textarea:focus {
+  outline:none; border-color:var(--acc);
+}
+.admin-field textarea { resize:vertical; min-height:60px; }
+.admin-form-footer {
+  display:flex; gap:8px; justify-content:flex-end; padding:14px 22px;
+  border-top:1px solid var(--bdr); flex-shrink:0;
 }
 
 /* ── COLLECTION MODE TOGGLE ── */
@@ -887,6 +1012,7 @@ img { -webkit-user-drag:none; user-drag:none; pointer-events:none; }
     <button class="tab active" onclick="showPage('search',this)">Search</button>
     <button class="tab" onclick="showPage('collection',this)">Collection</button>
     <button class="tab" id="dashboard-tab" style="display:none" onclick="showPage('dashboard',this)">Dashboard</button>
+    <button class="tab" id="admin-tab" style="display:none" onclick="showPage('admin',this)">✏️ Admin</button>
   </div>
   <div class="nav-right">
     <button class="tab admin-btn" id="admin-btn" onclick="toggleAdminLogin()" title="Admin">⚙</button>
@@ -1031,6 +1157,57 @@ img { -webkit-user-drag:none; user-drag:none; pointer-events:none; }
   <div class="card"><div id="genre-bars"></div></div>
   <div class="sec-title">Top Labels</div>
   <div class="card"><div id="label-bars" style="display:grid;grid-template-columns:1fr 1fr;gap:4px 24px"></div></div>
+</div>
+
+<!-- ══ ADMIN ══ -->
+<div class="page" id="page-admin">
+  <div class="admin-wrap">
+
+    <!-- API config banner -->
+    <div class="admin-api-bar" id="admin-api-bar">
+      <span>⚙ Sheet API URL not set.</span>
+      <input id="admin-api-input" type="text" placeholder="Paste your Google Apps Script Web App URL here…" />
+      <button onclick="saveApiUrl()">Save</button>
+    </div>
+
+    <!-- Toolbar -->
+    <div class="admin-toolbar">
+      <div class="admin-toolbar-left">
+        <input class="admin-search" id="admin-search-input" type="text" placeholder="Search tapes…" oninput="filterAdminTable()"/>
+      </div>
+      <div class="admin-toolbar-right">
+        <button class="admin-btn admin-btn-primary" onclick="openAdminForm(null)">+ Add Tape</button>
+        <button class="admin-btn" onclick="loadAdminTapes()">↺ Refresh</button>
+      </div>
+    </div>
+
+    <!-- Status -->
+    <div id="admin-status" class="admin-status"></div>
+
+    <!-- Table -->
+    <div class="admin-table-wrap">
+      <table class="admin-table" id="admin-table">
+        <thead id="admin-thead"></thead>
+        <tbody id="admin-tbody"></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ══ ADMIN FORM MODAL ══ -->
+<div id="admin-form-modal" onclick="if(event.target===this)closeAdminForm()">
+  <div class="admin-form-box">
+    <div class="admin-form-header">
+      <h3 id="admin-form-title">Add Tape</h3>
+      <button class="admin-form-close" onclick="closeAdminForm()">✕</button>
+    </div>
+    <div class="admin-form-body" id="admin-form-body"></div>
+    <div class="admin-form-footer">
+      <button class="admin-btn" onclick="closeAdminForm()">Cancel</button>
+      <button class="admin-btn admin-btn-danger" id="admin-delete-btn" onclick="deleteTape()" style="display:none">Delete</button>
+      <button class="admin-btn admin-btn-primary" onclick="saveTape()">Save</button>
+    </div>
+  </div>
 </div>
 
 <!-- ══ COLLECTION ══ -->
@@ -1503,6 +1680,12 @@ function tapeCard(t, q='') {
       <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>
       Play
     </button>` : '';
+  const ytmQuery = encodeURIComponent(`${t.artist||''} ${t.album||''}`.trim());
+  const ytmBtn = (t.artist||t.album) ? `
+    <a class="col-tile-ytm" href="https://music.youtube.com/search?q=${ytmQuery}" target="_blank" rel="noopener" onclick="event.stopPropagation()">
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M21.582 6.186a2.506 2.506 0 0 0-1.768-1.768C18.254 4 12 4 12 4s-6.254 0-7.814.418a2.506 2.506 0 0 0-1.768 1.768C2 7.746 2 12 2 12s0 4.254.418 5.814a2.506 2.506 0 0 0 1.768 1.768C5.746 20 12 20 12 20s6.254 0 7.814-.418a2.506 2.506 0 0 0 1.768-1.768C22 16.254 22 12 22 12s0-4.254-.418-5.814zM10 15.464V8.536L15.818 12 10 15.464z"/></svg>
+      YT Music
+    </a>` : '';
   return `
     <div class="tape-card">
       <div class="tape-num">#${t.ref}</div>
@@ -1510,7 +1693,7 @@ function tapeCard(t, q='') {
         <div class="tape-artist">${hi(esc(t.artist))}</div>
         <div class="tape-album">${hi(esc(t.album||'—'))}</div>
         <div class="tape-tags">${tags}</div>
-        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">${musicBtn}</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:6px">${musicBtn}${ytmBtn}</div>
       </div>
     </div>`;
 }
@@ -1764,6 +1947,13 @@ function colTile(t) {
       Play
     </button>` : '';
 
+  const ytmQuery = encodeURIComponent(`${t.artist||''} ${t.album||''}`.trim());
+  const ytmBtn = (t.artist||t.album) ? `
+    <a class="col-tile-ytm" href="https://music.youtube.com/search?q=${ytmQuery}" target="_blank" rel="noopener" onclick="event.stopPropagation()">
+      <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M21.582 6.186a2.506 2.506 0 0 0-1.768-1.768C18.254 4 12 4 12 4s-6.254 0-7.814.418a2.506 2.506 0 0 0-1.768 1.768C2 7.746 2 12 2 12s0 4.254.418 5.814a2.506 2.506 0 0 0 1.768 1.768C5.746 20 12 20 12 20s6.254 0 7.814-.418a2.506 2.506 0 0 0 1.768-1.768C22 16.254 22 12 22 12s0-4.254-.418-5.814zM10 15.464V8.536L15.818 12 10 15.464z"/></svg>
+      YT Music
+    </a>` : '';
+
   return `
     <div class="col-tile">
       <div class="col-art">${artInner}<div class="col-art-status" style="background:${statusColor}"></div></div>
@@ -1771,7 +1961,7 @@ function colTile(t) {
         <div class="col-tile-title" title="${esc(t.album||'—')}">${esc(t.album||'—')}</div>
         <div class="col-tile-sub">${esc(t.artist||'')}${t.label ? ' · '+esc(t.label) : ''}</div>
         <div class="col-tile-tags">${tags}</div>
-        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px">${musicBtn}</div>
+        <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px">${musicBtn}${ytmBtn}</div>
       </div>
     </div>`;
 }
@@ -2240,6 +2430,7 @@ function showPage(id, btn) {
   document.getElementById('page-'+id).classList.add('active');
   btn.classList.add('active');
   localStorage.setItem('active_page', id);
+  if (id === 'admin') initAdminPage();
 }
 
 // ═══════════════════════════════════════════════
@@ -2342,12 +2533,14 @@ function submitAdminLogin() {
 
 function unlockDashboard() {
   document.getElementById('dashboard-tab').style.display = '';
+  document.getElementById('admin-tab').style.display = '';
   document.getElementById('admin-btn').textContent = '🔓';
   document.getElementById('admin-btn').title = 'Logout';
 }
 
 function lockDashboard() {
   document.getElementById('dashboard-tab').style.display = 'none';
+  document.getElementById('admin-tab').style.display = 'none';
   document.getElementById('admin-btn').textContent = '⚙';
   document.getElementById('admin-btn').title = 'Admin login';
 }
@@ -2413,6 +2606,186 @@ window.addEventListener('DOMContentLoaded', async () => {
   } catch(e) {}
   await loadData();
 });
+// ═══════════════════════════════════════════════════════════════
+// ADMIN PAGE — read/write Google Sheet via Apps Script API
+// ═══════════════════════════════════════════════════════════════
+
+const SHEET_API_KEY = 'cassettemaroc_secret_2024'; // must match SheetAPI.gs
+let _adminApiUrl   = localStorage.getItem('cassette_api_url') || '';
+let _adminHeaders  = [];
+let _adminTapes    = [];
+let _adminFiltered = [];
+let _editingRow    = null; // null = new, number = existing row index
+
+// ── Show/hide API bar ─────────────────────────────────────────────
+function initAdminPage() {
+  const bar = document.getElementById('admin-api-bar');
+  if (_adminApiUrl) {
+    bar.classList.add('hidden');
+    loadAdminTapes();
+  } else {
+    bar.classList.remove('hidden');
+  }
+}
+
+function saveApiUrl() {
+  const val = document.getElementById('admin-api-input').value.trim();
+  if (!val) return;
+  _adminApiUrl = val;
+  localStorage.setItem('cassette_api_url', val);
+  document.getElementById('admin-api-bar').classList.add('hidden');
+  loadAdminTapes();
+}
+
+// ── Load tapes from sheet ─────────────────────────────────────────
+async function loadAdminTapes() {
+  setAdminStatus('loading', '↻ Loading tapes from sheet…');
+  try {
+    const url = _adminApiUrl + '?action=getTapes&key=' + encodeURIComponent(SHEET_API_KEY);
+    const res  = await fetch(url);
+    const json = await res.json();
+    if (json.status !== 'ok') throw new Error(json.message);
+    _adminHeaders = json.data.headers.filter(h => h);
+    _adminTapes   = json.data.tapes;
+    _adminFiltered= _adminTapes;
+    renderAdminTable();
+    setAdminStatus('ok', '✅ ' + _adminTapes.length + ' tapes loaded');
+  } catch(e) {
+    setAdminStatus('err', '❌ ' + e.message + ' — check your API URL above');
+  }
+}
+
+// ── Render table ──────────────────────────────────────────────────
+const ADMIN_VISIBLE_COLS = ['REF','Artist','Album / Title','Genre / Category','Digitized'];
+
+function renderAdminTable() {
+  const visibleHeaders = _adminHeaders.filter(h => ADMIN_VISIBLE_COLS.includes(h) || ADMIN_VISIBLE_COLS.some(v => h.toLowerCase().includes(v.toLowerCase())));
+
+  // Thead
+  document.getElementById('admin-thead').innerHTML = '<tr>' +
+    visibleHeaders.map(h => `<th>${esc(h)}</th>`).join('') +
+    '<th>Actions</th></tr>';
+
+  // Tbody
+  document.getElementById('admin-tbody').innerHTML = _adminFiltered.map(t => {
+    const cells = visibleHeaders.map(h => `<td title="${esc(t[h]||'')}">${esc(t[h]||'')}</td>`).join('');
+    return `<tr onclick="openAdminForm(${t._rowIndex})">
+      ${cells}
+      <td class="admin-td-actions" onclick="event.stopPropagation()">
+        <button class="admin-edit-btn" onclick="openAdminForm(${t._rowIndex})">Edit</button>
+      </td>
+    </tr>`;
+  }).join('') || '<tr><td colspan="99" style="text-align:center;padding:32px;color:var(--mut)">No tapes found</td></tr>';
+}
+
+function filterAdminTable() {
+  const q = document.getElementById('admin-search-input').value.toLowerCase().trim();
+  _adminFiltered = q
+    ? _adminTapes.filter(t => Object.values(t).some(v => String(v).toLowerCase().includes(q)))
+    : _adminTapes;
+  renderAdminTable();
+}
+
+// ── Admin form ────────────────────────────────────────────────────
+function openAdminForm(rowIndex) {
+  _editingRow = rowIndex;
+  const tape = rowIndex ? _adminTapes.find(t => t._rowIndex === rowIndex) || {} : {};
+  const isNew = !rowIndex;
+
+  document.getElementById('admin-form-title').textContent = isNew ? '➕ Add New Tape' : '✏️ Edit Tape';
+  document.getElementById('admin-delete-btn').style.display = isNew ? 'none' : '';
+  document.getElementById('admin-form-modal').classList.add('open');
+
+  // Build form fields from headers
+  const skip = ['REF','dates','date','Date','Dates','_rowIndex'];
+  const body  = document.getElementById('admin-form-body');
+  body.innerHTML = _adminHeaders
+    .filter(h => !skip.includes(h))
+    .map(h => {
+      const val = esc(tape[h] || '');
+      const id  = 'af_' + h.replace(/[^a-z0-9]/gi,'_');
+      const isLong = h.toLowerCase().includes('note') || h.toLowerCase().includes('description');
+      const isSelect = h === 'Digitized';
+
+      if (isSelect) {
+        return `<div class="admin-field"><label>${esc(h)}</label>
+          <select id="${id}">
+            <option value="">—</option>
+            <option value="YES" ${tape[h]==='YES'?'selected':''}>YES</option>
+            <option value="not" ${tape[h]==='not'?'selected':''}>not</option>
+          </select></div>`;
+      }
+      if (isLong) {
+        return `<div class="admin-field full-width"><label>${esc(h)}</label>
+          <textarea id="${id}">${tape[h]||''}</textarea></div>`;
+      }
+      return `<div class="admin-field"><label>${esc(h)}</label>
+        <input id="${id}" type="text" value="${val}"/></div>`;
+    }).join('');
+}
+
+function closeAdminForm() {
+  document.getElementById('admin-form-modal').classList.remove('open');
+  _editingRow = null;
+}
+
+// ── Save (add or update) ──────────────────────────────────────────
+async function saveTape() {
+  if (!_adminApiUrl) { setAdminStatus('err','❌ No API URL set'); return; }
+
+  const data = {};
+  _adminHeaders.forEach(h => {
+    const id = 'af_' + h.replace(/[^a-z0-9]/gi,'_');
+    const el = document.getElementById(id);
+    if (el) data[h] = el.value;
+  });
+
+  const isNew  = !_editingRow;
+  const action = isNew ? 'addTape' : 'updateTape';
+  const body   = { key: SHEET_API_KEY, action, data };
+  if (!isNew) body.rowIndex = _editingRow;
+
+  setAdminStatus('loading', isNew ? '↻ Adding tape…' : '↻ Saving changes…');
+
+  try {
+    const res  = await fetch(_adminApiUrl, { method:'POST', body: JSON.stringify(body) });
+    const json = await res.json();
+    if (json.status !== 'ok') throw new Error(json.message);
+    closeAdminForm();
+    setAdminStatus('ok', '✅ ' + json.data.message);
+    await loadAdminTapes();
+    // Reload main app data so new tape shows in search/collection
+    await loadData();
+  } catch(e) {
+    setAdminStatus('err', '❌ ' + e.message);
+  }
+}
+
+// ── Delete ────────────────────────────────────────────────────────
+async function deleteTape() {
+  if (!_editingRow) return;
+  if (!confirm('Delete this tape permanently from your sheet?')) return;
+
+  setAdminStatus('loading','↻ Deleting…');
+  try {
+    const body = { key: SHEET_API_KEY, action: 'deleteTape', rowIndex: _editingRow };
+    const res  = await fetch(_adminApiUrl, { method:'POST', body: JSON.stringify(body) });
+    const json = await res.json();
+    if (json.status !== 'ok') throw new Error(json.message);
+    closeAdminForm();
+    setAdminStatus('ok','✅ Tape deleted');
+    await loadAdminTapes();
+    await loadData();
+  } catch(e) {
+    setAdminStatus('err','❌ ' + e.message);
+  }
+}
+
+function setAdminStatus(type, msg) {
+  const el = document.getElementById('admin-status');
+  el.className = 'admin-status ' + type;
+  el.textContent = msg;
+}
 </script>
 </body>
 </html>
