@@ -2687,12 +2687,13 @@ async function loadAdminTapes() {
 }
 
 // ── Render table ──────────────────────────────────────────────────
-const ADMIN_VISIBLE_COLS = ['REF','Artist','Album / Title','Genre / Category','Digitized'];
-
 function renderAdminTable() {
-  const visibleH = _adminHeaders.filter(h =>
-    ADMIN_VISIBLE_COLS.some(v => h.toLowerCase().includes(v.toLowerCase()))
-  );
+  // Show key columns only to keep table readable, but use ALL headers in forms
+  const priority = ['REF','Artist','Album / Title','Genre / Category','Label / Notes','Digitized','WEBARCHIVE','music'];
+  const visibleH = [
+    ...priority.filter(p => _adminHeaders.some(h => h.toLowerCase().includes(p.toLowerCase()))),
+    ..._adminHeaders.filter(h => !priority.some(p => h.toLowerCase().includes(p.toLowerCase())))
+  ].slice(0, 8); // show max 8 columns in table
 
   document.getElementById('admin-thead').innerHTML = '<tr>' +
     visibleH.map(h => `<th>${esc(h)}</th>`).join('') +
@@ -2730,20 +2731,28 @@ function openAdminForm(ref) {
   document.getElementById('admin-form-modal').classList.add('open');
 
   const skip = ['REF','dates','date','Date','Dates','row_number'];
+  // YES/not toggle columns
+  const yesNotCols = ['Digitized','COVER SCAN','ART Work'];
+  // URL columns — show as full-width
+  const urlCols = ['YOUTUBE','INSTAGRAM','WEBARCHIVE','music','ART Work'];
+
   document.getElementById('admin-form-body').innerHTML = _adminHeaders
     .filter(h => !skip.includes(h))
     .map(h => {
       const id       = 'af_' + h.replace(/[^a-z0-9]/gi,'_');
       const val      = (tape[h] || '').replace(/"/g, '&quot;');
-      const isSelect = h === 'Digitized';
-      const isLong   = h.toLowerCase().includes('note') || h.toLowerCase().includes('description');
+      const isYesNot = yesNotCols.includes(h);
+      const isUrl    = urlCols.some(u => h.toLowerCase().includes(u.toLowerCase()));
+      const isLong   = h.toLowerCase().includes('note') || h.toLowerCase().includes('label');
 
-      if (isSelect) return `<div class="admin-field"><label>${esc(h)}</label>
+      if (isYesNot) return `<div class="admin-field"><label>${esc(h)}</label>
         <select id="${id}">
           <option value="">—</option>
           <option value="YES" ${tape[h]==='YES'?'selected':''}>YES</option>
           <option value="not" ${tape[h]==='not'?'selected':''}>not</option>
         </select></div>`;
+      if (isUrl) return `<div class="admin-field full-width"><label>${esc(h)}</label>
+        <input id="${id}" type="url" value="${val}" placeholder="https://…"/></div>`;
       if (isLong) return `<div class="admin-field full-width"><label>${esc(h)}</label>
         <textarea id="${id}">${esc(tape[h]||'')}</textarea></div>`;
       return `<div class="admin-field"><label>${esc(h)}</label>
