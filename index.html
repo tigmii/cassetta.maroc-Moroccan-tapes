@@ -1166,12 +1166,12 @@ img { -webkit-user-drag:none; user-drag:none; pointer-events:none; }
     <!-- API config banner -->
     <div class="admin-api-bar" id="admin-api-bar">
       <div style="flex:1;min-width:0">
-        <div style="font-size:12px;font-weight:600;margin-bottom:6px">⚙ Step 1 — Connect to your Google Sheet</div>
+        <div style="font-size:12px;font-weight:600;margin-bottom:6px">⚙ Connect to SheetDB</div>
         <div style="font-size:10px;color:rgba(255,200,0,.7);margin-bottom:10px">
-          In Google Sheets → Extensions → Apps Script → Deploy as Web App → copy the URL and paste below
+          Go to <b>sheetdb.io</b> → Create API → paste your Google Sheet URL → copy the API URL
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <input id="admin-api-input" type="text" placeholder="https://script.google.com/macros/s/…/exec" style="flex:1;min-width:280px"/>
+          <input id="admin-api-input" type="text" placeholder="https://sheetdb.io/api/v1/XXXXXXXX" style="flex:1;min-width:280px"/>
           <button onclick="saveApiUrl()">Connect</button>
           <button onclick="clearApiUrl()" style="opacity:.6">Reset</button>
         </div>
@@ -2616,66 +2616,73 @@ window.addEventListener('DOMContentLoaded', async () => {
   await loadData();
 });
 // ═══════════════════════════════════════════════════════════════
-// ADMIN PAGE — read/write Google Sheet via Apps Script API
+// ADMIN PAGE — powered by SheetDB.io
 // ═══════════════════════════════════════════════════════════════
 
-const SHEET_API_KEY = 'cassettemaroc_secret_2024'; // must match SheetAPI.gs
-let _adminApiUrl   = '';  // set by user each session
-let _adminHeaders  = [];
-let _adminTapes    = [];
-let _adminFiltered = [];
-let _editingRow    = null;
+let _sheetdbUrl   = '';   // e.g. https://sheetdb.io/api/v1/XXXXXXXX
+let _adminHeaders = [];
+let _adminTapes   = [];
+let _adminFiltered= [];
+let _editingRow   = null; // null = new, string REF = existing
 
-// ── Show/hide API bar ─────────────────────────────────────────────
+// ── Init ──────────────────────────────────────────────────────────
 function initAdminPage() {
   const bar = document.getElementById('admin-api-bar');
-  if (_adminApiUrl) {
+  if (_sheetdbUrl) {
     bar.classList.add('hidden');
     loadAdminTapes();
   } else {
     bar.classList.remove('hidden');
     setAdminStatus('', '');
-    // Show helpful message in table area
     document.getElementById('admin-thead').innerHTML = '';
     document.getElementById('admin-tbody').innerHTML =
-      '<tr><td colspan="99" style="text-align:center;padding:40px;color:var(--mut)">Paste your Google Apps Script URL above to connect</td></tr>';
+      '<tr><td colspan="99" style="text-align:center;padding:40px;color:var(--mut)">Paste your SheetDB URL above to connect</td></tr>';
   }
 }
 
 function saveApiUrl() {
   const val = document.getElementById('admin-api-input').value.trim();
-  if (!val || !val.includes('script.google.com')) {
+  if (!val || !val.includes('sheetdb.io')) {
     document.getElementById('admin-api-status').style.color = '#ef4444';
-    document.getElementById('admin-api-status').textContent = '⚠ That doesn\'t look like a Google Apps Script URL';
+    document.getElementById('admin-api-status').textContent = '⚠ Paste a SheetDB URL — looks like: https://sheetdb.io/api/v1/XXXXXXXX';
     return;
   }
-  _adminApiUrl = val;
+  _sheetdbUrl = val.replace(/\/$/, ''); // remove trailing slash
   document.getElementById('admin-api-bar').classList.add('hidden');
   loadAdminTapes();
 }
 
 function clearApiUrl() {
-  _adminApiUrl = '';
+  _sheetdbUrl = '';
   document.getElementById('admin-api-input').value = '';
   document.getElementById('admin-api-bar').classList.remove('hidden');
   setAdminStatus('', '');
 }
 
-// ── Load tapes from sheet ─────────────────────────────────────────
+// ── Load tapes ────────────────────────────────────────────────────
 async function loadAdminTapes() {
   setAdminStatus('loading', '↻ Loading tapes from sheet…');
   try {
-    const url = _adminApiUrl + '?action=getTapes&key=' + encodeURIComponent(SHEET_API_KEY);
-    const res  = await fetch(url);
-    const json = await res.json();
-    if (json.status !== 'ok') throw new Error(json.message);
-    _adminHeaders = json.data.headers.filter(h => h);
-    _adminTapes   = json.data.tapes;
-    _adminFiltered= _adminTapes;
+    // SheetDB returns all rows as array of objects keyed by header
+    const res  = await fetch(_sheetdbUrl + '?limit=500');
+    if (!res.ok) throw new Error('HTTP ' + res.status + ' — check your SheetDB URL');
+    const rows = await res.json();
+
+    if (!Array.isArray(rows) || rows.length === 0) {
+      setAdminStatus('err', '❌ No data returned — make sure your sheet has data');
+      return;
+    }
+
+    // Extract headers from first row keys (excluding internal SheetDB keys)
+    _adminHeaders = Object.keys(rows[0]).filter(k => k !== 'row_number');
+
+    // Store tapes with row_number for updates/deletes
+    _adminTapes    = rows;
+    _adminFiltered = rows;
     renderAdminTable();
-    setAdminStatus('ok', '✅ ' + _adminTapes.length + ' tapes loaded');
+    setAdminStatus('ok', '✅ ' + rows.length + ' tapes loaded');
   } catch(e) {
-    setAdminStatus('err', '❌ ' + e.message + ' — check your API URL above');
+    setAdminStatus('err', '❌ ' + e.message);
   }
 }
 
@@ -2683,20 +2690,21 @@ async function loadAdminTapes() {
 const ADMIN_VISIBLE_COLS = ['REF','Artist','Album / Title','Genre / Category','Digitized'];
 
 function renderAdminTable() {
-  const visibleHeaders = _adminHeaders.filter(h => ADMIN_VISIBLE_COLS.includes(h) || ADMIN_VISIBLE_COLS.some(v => h.toLowerCase().includes(v.toLowerCase())));
+  const visibleH = _adminHeaders.filter(h =>
+    ADMIN_VISIBLE_COLS.some(v => h.toLowerCase().includes(v.toLowerCase()))
+  );
 
-  // Thead
   document.getElementById('admin-thead').innerHTML = '<tr>' +
-    visibleHeaders.map(h => `<th>${esc(h)}</th>`).join('') +
+    visibleH.map(h => `<th>${esc(h)}</th>`).join('') +
     '<th>Actions</th></tr>';
 
-  // Tbody
-  document.getElementById('admin-tbody').innerHTML = _adminFiltered.map(t => {
-    const cells = visibleHeaders.map(h => `<td title="${esc(t[h]||'')}">${esc(t[h]||'')}</td>`).join('');
-    return `<tr onclick="openAdminForm(${t._rowIndex})">
+  document.getElementById('admin-tbody').innerHTML = _adminFiltered.map((t, i) => {
+    const ref = t['REF'] || i;
+    const cells = visibleH.map(h => `<td title="${esc(t[h]||'')}">${esc(t[h]||'')}</td>`).join('');
+    return `<tr onclick="openAdminForm('${ref}')">
       ${cells}
       <td class="admin-td-actions" onclick="event.stopPropagation()">
-        <button class="admin-edit-btn" onclick="openAdminForm(${t._rowIndex})">Edit</button>
+        <button class="admin-edit-btn" onclick="openAdminForm('${ref}')">Edit</button>
       </td>
     </tr>`;
   }).join('') || '<tr><td colspan="99" style="text-align:center;padding:32px;color:var(--mut)">No tapes found</td></tr>';
@@ -2710,39 +2718,34 @@ function filterAdminTable() {
   renderAdminTable();
 }
 
-// ── Admin form ────────────────────────────────────────────────────
-function openAdminForm(rowIndex) {
-  _editingRow = rowIndex;
-  const tape = rowIndex ? _adminTapes.find(t => t._rowIndex === rowIndex) || {} : {};
-  const isNew = !rowIndex;
+// ── Open form ─────────────────────────────────────────────────────
+function openAdminForm(ref) {
+  // ref is null for new, or REF value for edit
+  _editingRow = ref || null;
+  const tape  = ref ? _adminTapes.find(t => String(t['REF']) === String(ref)) || {} : {};
+  const isNew = !ref;
 
   document.getElementById('admin-form-title').textContent = isNew ? '➕ Add New Tape' : '✏️ Edit Tape';
   document.getElementById('admin-delete-btn').style.display = isNew ? 'none' : '';
   document.getElementById('admin-form-modal').classList.add('open');
 
-  // Build form fields from headers
-  const skip = ['REF','dates','date','Date','Dates','_rowIndex'];
-  const body  = document.getElementById('admin-form-body');
-  body.innerHTML = _adminHeaders
+  const skip = ['REF','dates','date','Date','Dates','row_number'];
+  document.getElementById('admin-form-body').innerHTML = _adminHeaders
     .filter(h => !skip.includes(h))
     .map(h => {
-      const val = esc(tape[h] || '');
-      const id  = 'af_' + h.replace(/[^a-z0-9]/gi,'_');
-      const isLong = h.toLowerCase().includes('note') || h.toLowerCase().includes('description');
+      const id       = 'af_' + h.replace(/[^a-z0-9]/gi,'_');
+      const val      = (tape[h] || '').replace(/"/g, '&quot;');
       const isSelect = h === 'Digitized';
+      const isLong   = h.toLowerCase().includes('note') || h.toLowerCase().includes('description');
 
-      if (isSelect) {
-        return `<div class="admin-field"><label>${esc(h)}</label>
-          <select id="${id}">
-            <option value="">—</option>
-            <option value="YES" ${tape[h]==='YES'?'selected':''}>YES</option>
-            <option value="not" ${tape[h]==='not'?'selected':''}>not</option>
-          </select></div>`;
-      }
-      if (isLong) {
-        return `<div class="admin-field full-width"><label>${esc(h)}</label>
-          <textarea id="${id}">${tape[h]||''}</textarea></div>`;
-      }
+      if (isSelect) return `<div class="admin-field"><label>${esc(h)}</label>
+        <select id="${id}">
+          <option value="">—</option>
+          <option value="YES" ${tape[h]==='YES'?'selected':''}>YES</option>
+          <option value="not" ${tape[h]==='not'?'selected':''}>not</option>
+        </select></div>`;
+      if (isLong) return `<div class="admin-field full-width"><label>${esc(h)}</label>
+        <textarea id="${id}">${esc(tape[h]||'')}</textarea></div>`;
       return `<div class="admin-field"><label>${esc(h)}</label>
         <input id="${id}" type="text" value="${val}"/></div>`;
     }).join('');
@@ -2755,7 +2758,7 @@ function closeAdminForm() {
 
 // ── Save (add or update) ──────────────────────────────────────────
 async function saveTape() {
-  if (!_adminApiUrl) { setAdminStatus('err','❌ No API URL set'); return; }
+  if (!_sheetdbUrl) { setAdminStatus('err','❌ No SheetDB URL set'); return; }
 
   const data = {};
   _adminHeaders.forEach(h => {
@@ -2764,21 +2767,37 @@ async function saveTape() {
     if (el) data[h] = el.value;
   });
 
-  const isNew  = !_editingRow;
-  const action = isNew ? 'addTape' : 'updateTape';
-  const body   = { key: SHEET_API_KEY, action, data };
-  if (!isNew) body.rowIndex = _editingRow;
-
+  const isNew = !_editingRow;
   setAdminStatus('loading', isNew ? '↻ Adding tape…' : '↻ Saving changes…');
 
   try {
-    const res  = await fetch(_adminApiUrl, { method:'POST', body: JSON.stringify(body) });
+    let res;
+    if (isNew) {
+      // Auto REF
+      const maxRef = _adminTapes.reduce((m, t) => Math.max(m, parseInt(t['REF'])||0), 0);
+      data['REF'] = String(maxRef + 1);
+      // Auto date
+      if (!data['dates']) data['dates'] = new Date().toLocaleDateString('en-US');
+
+      res = await fetch(_sheetdbUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ data: [data] })
+      });
+    } else {
+      // Update by REF value
+      res = await fetch(_sheetdbUrl + '/REF/' + encodeURIComponent(_editingRow), {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ data: data })
+      });
+    }
+
+    if (!res.ok) throw new Error('HTTP ' + res.status);
     const json = await res.json();
-    if (json.status !== 'ok') throw new Error(json.message);
     closeAdminForm();
-    setAdminStatus('ok', '✅ ' + json.data.message);
+    setAdminStatus('ok', isNew ? '✅ Tape added' : '✅ Tape updated');
     await loadAdminTapes();
-    // Reload main app data so new tape shows in search/collection
     await loadData();
   } catch(e) {
     setAdminStatus('err', '❌ ' + e.message);
@@ -2792,10 +2811,10 @@ async function deleteTape() {
 
   setAdminStatus('loading','↻ Deleting…');
   try {
-    const body = { key: SHEET_API_KEY, action: 'deleteTape', rowIndex: _editingRow };
-    const res  = await fetch(_adminApiUrl, { method:'POST', body: JSON.stringify(body) });
-    const json = await res.json();
-    if (json.status !== 'ok') throw new Error(json.message);
+    const res = await fetch(_sheetdbUrl + '/REF/' + encodeURIComponent(_editingRow), {
+      method: 'DELETE'
+    });
+    if (!res.ok) throw new Error('HTTP ' + res.status);
     closeAdminForm();
     setAdminStatus('ok','✅ Tape deleted');
     await loadAdminTapes();
