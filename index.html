@@ -1235,20 +1235,6 @@ img { -webkit-user-drag:none; user-drag:none; pointer-events:none; }
 <div class="page" id="page-admin">
   <div class="admin-wrap">
 
-    <!-- API config banner -->
-    <div class="admin-api-bar" id="admin-api-bar">
-      <div style="flex:1;min-width:0">
-        <div style="font-size:12px;font-weight:600;margin-bottom:6px">⚙ Connect to SheetDB</div>
-        <div style="font-size:10px;color:rgba(255,200,0,.7);margin-bottom:10px">
-          Go to <b>sheetdb.io</b> → Create API → paste your Google Sheet URL → copy the API URL
-        </div>
-        <div style="display:flex;gap:8px;flex-wrap:wrap">
-          <input id="admin-api-input" type="text" placeholder="https://sheetdb.io/api/v1/XXXXXXXX" style="flex:1;min-width:280px"/>
-          <button onclick="saveApiUrl()">Connect</button>
-          <button onclick="clearApiUrl()" style="opacity:.6">Reset</button>
-        </div>
-        <div id="admin-api-status" style="margin-top:6px;font-size:10px"></div>
-      </div>
     </div>
 
     <!-- Toolbar -->
@@ -1261,6 +1247,9 @@ img { -webkit-user-drag:none; user-drag:none; pointer-events:none; }
         <button class="admin-btn" onclick="loadAdminTapes()">↺ Refresh</button>
       </div>
     </div>
+
+    <!-- REF range filter -->
+    <div class="number-bar" id="admin-number-bar" style="margin-top:10px"></div>
 
     <!-- Status -->
     <div id="admin-status" class="admin-status"></div>
@@ -2777,9 +2766,10 @@ window.addEventListener('DOMContentLoaded', async () => {
 // ADMIN PAGE — powered by SheetDB.io
 // ═══════════════════════════════════════════════════════════════
 
-let _sheetdbUrl    = '';
+let _sheetdbUrl    = 'https://sheetdb.io/api/v1/2qlsy3vwlnude'; // hardcoded
 let _adminTapes    = [];
 let _adminFiltered = [];
+let _adminRange    = 'ALL'; // REF range filter for admin table
 let _editingRef    = null;
 let _artistOptions = [];
 let _labelOptions  = [];
@@ -2787,33 +2777,11 @@ let _genreOptions  = [];
 
 // ── Init ──────────────────────────────────────────────────────────
 function initAdminPage() {
-  const bar = document.getElementById('admin-api-bar');
-  if (_sheetdbUrl) { bar.classList.add('hidden'); loadAdminTapes(); }
-  else {
-    bar.classList.remove('hidden');
-    setAdminStatus('','');
-    document.getElementById('admin-thead').innerHTML = '';
-    document.getElementById('admin-tbody').innerHTML =
-      '<tr><td colspan="99" style="text-align:center;padding:40px;color:var(--mut)">Paste your SheetDB URL above to connect</td></tr>';
-  }
-}
-
-function saveApiUrl() {
-  const val = document.getElementById('admin-api-input').value.trim();
-  if (!val || !val.includes('sheetdb.io')) {
-    document.getElementById('admin-api-status').style.color='#ef4444';
-    document.getElementById('admin-api-status').textContent='⚠ Needs a sheetdb.io URL';
-    return;
-  }
-  _sheetdbUrl = val.replace(/\/$/, '');
-  document.getElementById('admin-api-bar').classList.add('hidden');
   loadAdminTapes();
 }
-function clearApiUrl() {
-  _sheetdbUrl=''; document.getElementById('admin-api-input').value='';
-  document.getElementById('admin-api-bar').classList.remove('hidden');
-  setAdminStatus('','');
-}
+
+
+
 
 // ── Load ──────────────────────────────────────────────────────────
 async function loadAdminTapes() {
@@ -2828,6 +2796,7 @@ async function loadAdminTapes() {
     _artistOptions = [...new Set(rows.map(r=>r['Artist']).filter(Boolean))].sort();
     _labelOptions  = [...new Set(rows.map(r=>r['Label / Notes']).filter(Boolean))].sort();
     _genreOptions  = [...new Set(rows.flatMap(r=>(r['Genre / Category']||'').split(/,\s*/)).filter(Boolean))].sort();
+    buildAdminNumberBar();
     renderAdminTable();
     const headers = Object.keys(rows[0]).filter(k=>k!=='row_number');
     const hasRealData = headers.includes('Artist') || headers.includes('REF');
@@ -2861,7 +2830,49 @@ function renderAdminTable() {
 
 function filterAdminTable() {
   const q = document.getElementById('admin-search-input').value.toLowerCase().trim();
-  _adminFiltered = q ? _adminTapes.filter(t=>Object.values(t).some(v=>String(v).toLowerCase().includes(q))) : _adminTapes;
+  let base = _adminRange === 'ALL'
+    ? _adminTapes
+    : (() => {
+        const [from, to] = _adminRange.split('–').map(Number);
+        return _adminTapes.filter(t => { const r=parseInt(t['REF'])||0; return r>=from && r<=to; });
+      })();
+  _adminFiltered = q ? base.filter(t=>Object.values(t).some(v=>String(v).toLowerCase().includes(q))) : base;
+  renderAdminTable();
+}
+
+function buildAdminNumberBar() {
+  const bar = document.getElementById('admin-number-bar');
+  if (!bar) return;
+  const refs = _adminTapes.map(t=>parseInt(t['REF'])||0).filter(Boolean);
+  if (!refs.length) { bar.innerHTML=''; return; }
+  const maxRef = Math.max(...refs);
+  const step = 50;
+  const ranges = [];
+  for (let i=1; i<=maxRef; i+=step) {
+    const end = Math.min(i+step-1, maxRef);
+    const count = refs.filter(r=>r>=i&&r<=end).length;
+    if (count>0) ranges.push({from:i, to:end, label:`${i}–${end}`, count});
+  }
+  bar.innerHTML =
+    `<button class="number-btn all ${_adminRange==='ALL'?'active':''}" onclick="filterAdminByRange('ALL')">ALL <span style="opacity:.5;font-size:9px">${_adminTapes.length}</span></button>` +
+    ranges.map(r =>
+      `<button class="number-btn ${_adminRange===r.label?'active':''}" onclick="filterAdminByRange('${r.label}')">${r.label} <span style="opacity:.5;font-size:9px">${r.count}</span></button>`
+    ).join('');
+}
+
+function filterAdminByRange(label) {
+  _adminRange = label;
+  document.querySelectorAll('#admin-number-bar .number-btn').forEach(b =>
+    b.classList.toggle('active', b.textContent.trim().startsWith(label === 'ALL' ? 'ALL' : label))
+  );
+  const q = document.getElementById('admin-search-input').value.toLowerCase().trim();
+  let base = label === 'ALL'
+    ? _adminTapes
+    : (() => {
+        const [from, to] = label.split('–').map(Number);
+        return _adminTapes.filter(t => { const r=parseInt(t['REF'])||0; return r>=from && r<=to; });
+      })();
+  _adminFiltered = q ? base.filter(t=>Object.values(t).some(v=>String(v).toLowerCase().includes(q))) : base;
   renderAdminTable();
 }
 
