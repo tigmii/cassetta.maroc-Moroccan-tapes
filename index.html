@@ -3005,13 +3005,9 @@ function closeAdminForm() {
 // ── Save ──────────────────────────────────────────────────────────
 async function saveTape() {
   if (!_sheetdbUrl) { setAdminStatus('err','❌ No SheetDB URL'); return; }
-  const g = id => { const e=document.getElementById(id); return e?e.value:''; };
-  const r = n  => { const e=document.querySelector(`input[name="${n}"]:checked`); return e?e.value:''; };
 
-  // For status fields: if URL filled → use "posted", else use toggle value
-  const ytUrl  = g('af_youtube_url');
-  const igUrl  = g('af_instagram_url');
-  const waUrl  = g('af_webarchive_url');
+  const g = id => { const e = document.getElementById(id); return e ? e.value.trim() : ''; };
+  const r = name => { const e = document.querySelector(`input[name="${name}"]:checked`); return e ? e.value : 'not'; };
 
   const data = {
     'Artist':           g('af_artist'),
@@ -3020,39 +3016,51 @@ async function saveTape() {
     'Label / Notes':    g('af_label'),
     'COVER SCAN':       r('af_coverscan'),
     'Digitized':        r('af_digitized'),
-    'YOUTUBE':          ytUrl ? 'posted' : r('af_youtube_s'),
-    'INSTAGRAM':        igUrl ? 'posted' : r('af_instagram_s'),
-    'WEBARCHIVE':       waUrl ? 'posted' : r('af_webarchive_s'),
+    'YOUTUBE':          r('af_youtube_s'),
+    'INSTAGRAM':        r('af_instagram_s'),
+    'WEBARCHIVE':       g('af_webarchive_url') ? 'posted' : r('af_webarchive_s'),
     'ART Work':         g('af_artwork'),
-    'YOUTUBE':          ytUrl||r('af_youtube_s'),
-    'INSTAGRAM':        igUrl||r('af_instagram_s'),
-    'WEBARCHIVE':       waUrl||r('af_webarchive_s'),
-    'music':            g('af_music'),
+    'music':            g('af_music') || g('af_webarchive_url'),
   };
 
+  // Deduplicate — keep last value for each key
+  const clean = {};
+  Object.keys(data).forEach(k => clean[k] = data[k]);
+
   const isNew = !_editingRef;
-  setAdminStatus('loading', isNew?'↻ Adding tape…':'↻ Saving…');
+  if (!clean['Artist'] && !clean['Album / Title']) {
+    setAdminStatus('err', '❌ Artist and Album are required');
+    return;
+  }
+
+  setAdminStatus('loading', isNew ? '↻ Adding tape…' : '↻ Saving…');
   try {
     let res;
     if (isNew) {
-      const maxRef = _adminTapes.reduce((m,t)=>Math.max(m,parseInt(t['REF'])||0),0);
-      data['REF']   = String(maxRef+1);
-      data['dates'] = new Date().toLocaleDateString('en-US');
+      const maxRef = _adminTapes.reduce((m,t) => Math.max(m, parseInt(t['REF'])||0), 0);
+      clean['REF']   = String(maxRef + 1);
+      clean['dates'] = new Date().toLocaleDateString('en-US');
       res = await fetch(_sheetdbUrl, {
-        method:'POST', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({data:[data]})
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ data: [clean] })
       });
     } else {
-      res = await fetch(_sheetdbUrl+'/REF/'+encodeURIComponent(_editingRef), {
-        method:'PATCH', headers:{'Content-Type':'application/json'},
-        body: JSON.stringify({data})
+      res = await fetch(_sheetdbUrl + '/REF/' + encodeURIComponent(_editingRef), {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ data: clean })
       });
     }
-    if (!res.ok) throw new Error('HTTP '+res.status);
+    const json = await res.json().catch(() => ({}));
+    if (!res.ok) throw new Error(json.error || 'HTTP ' + res.status);
     closeAdminForm();
-    setAdminStatus('ok', isNew?'✅ Tape added!':'✅ Saved!');
-    await loadAdminTapes(); await loadData();
-  } catch(e) { setAdminStatus('err','❌ '+e.message); }
+    setAdminStatus('ok', isNew ? '✅ Tape #' + clean['REF'] + ' added!' : '✅ Tape saved!');
+    await loadAdminTapes();
+    await loadData();
+  } catch(e) {
+    setAdminStatus('err', '❌ ' + e.message);
+  }
 }
 
 // ── Delete ────────────────────────────────────────────────────────
