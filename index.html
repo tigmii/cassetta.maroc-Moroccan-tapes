@@ -2182,6 +2182,8 @@ async function loadAdminTapes() {
     const rows = await res.json();
     if (!Array.isArray(rows)||!rows.length) throw new Error('No data');
     _adminTapes = rows; _adminFiltered = rows;
+    buildAdminLetterBar();
+    buildAdminNumberBar();
     // Build option lists from existing data
     _artistOptions = [...new Set(rows.map(r=>r['Artist']).filter(Boolean))].sort();
     _labelOptions  = [...new Set(rows.map(r=>r['Label / Notes']).filter(Boolean))].sort();
