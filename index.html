@@ -198,7 +198,7 @@ nav#masthead.hidden{display:none}
 
 /* ── SEARCH PAGE ── */
 .search-hero{padding:40px 0 20px;text-align:center}
-.search-hero h1{font-size:36px;font-weight:800;color:#1a1a1a;margin-bottom:6px;font-family:Arial,sans-serif;letter-spacing:-.5px}
+.search-hero h1{font-size:36px;font-weight:800;color:#1a1a1a;margin-bottom:6px;font-family:Arial,sans-serif;letter-spacing:2px}
 .search-hero h1 span{color:#2e7d32}
 .search-hero p{font-size:14px;color:#888;margin-bottom:18px}
 .search-wrap{position:relative;max-width:540px;margin:0 auto 10px}
@@ -478,22 +478,85 @@ mark{background:#fef08a;color:#713f12;border-radius:2px;padding:0 1px}
 
 /* RESPONSIVE */
 @media(max-width:768px){
+  /* Nav */
+  nav#masthead{padding:0 14px}
   .nav-logo-name{display:none}
-  .page-wrap{padding:18px 14px 80px}
-  .artist-grid,.col-grid{grid-template-columns:repeat(2,1fr);gap:0}#results{grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:14px}
-  .kpi-grid{grid-template-columns:1fr 1fr;gap:8px}
+  .tab{padding:0 10px;font-size:13px}
+
+  /* Layout */
+  .page-wrap{padding:16px 12px 80px}
+
+  /* Search */
+  .search-hero{padding:28px 0 16px}
+  .search-hero h1{font-size:26px;letter-spacing:1px}
+  .search-hero p{font-size:13px;margin-bottom:14px}
+  .search-wrap{max-width:100%}
+  .filter-bar{max-width:100%;justify-content:flex-start}
+
+  /* Results grid */
+  #results{grid-template-columns:repeat(2,1fr);gap:12px}
+
+  /* Collection */
+  .artist-grid,.col-grid{grid-template-columns:repeat(2,1fr);gap:0}
+  .col-mode-bar{gap:2px}
+  .col-mode-btn{padding:0 10px;font-size:12px}
+  .filter-row{gap:3px}
+  .letter-btn,.num-btn{min-width:28px;height:28px;font-size:11px;padding:0 5px}
+
+  /* Dashboard */
+  .kpi-grid{grid-template-columns:repeat(2,1fr);gap:8px}
+  .kpi-val{font-size:26px}
+  .prog-big{font-size:34px}
   .dash-two-col{grid-template-columns:1fr}
-  .admin-toolbar{flex-direction:column;align-items:stretch}
+  .card{padding:12px}
+  .cal-cell{width:10px;height:10px}
+  .cal-dl{width:10px;height:10px;font-size:7px}
+  .cal-ml{width:10px}
+  #cal-grid{gap:1px}
+  #cal-months{gap:1px}
+
+  /* Admin */
+  .admin-toolbar{flex-direction:column;align-items:stretch;gap:8px}
   .admin-toolbar-right{justify-content:flex-end}
   .admin-search{width:100%}
   .af-grid{grid-template-columns:1fr}
   .af-full{grid-column:1}
+  .af-status-grid{grid-template-columns:1fr 1fr}
+  .admin-table{font-size:12px}
+  .admin-table th,.admin-table td{padding:7px 10px}
+
+  /* Cards */
+  .tape-body{padding:8px 0}
+  .tape-artist{font-size:12px}
+  .tape-album{font-size:11px}
+
+  /* Modal */
+  .admin-form-box,.mp-box{max-height:95vh;border-radius:10px}
 }
+
 @media(max-width:480px){
-  .tab{padding:0 8px;font-size:12px}
-  .artist-grid,.col-grid,#results{grid-template-columns:repeat(2,1fr);gap:10px}
-  .kpi-grid{grid-template-columns:repeat(2,1fr)}
-  .search-hero h1{font-size:24px}
+  /* Nav — icon only */
+  .tab{padding:0 8px;font-size:12px;gap:3px}
+  .nav-sync-btn span{display:none}
+
+  /* Search */
+  .search-hero{padding:22px 0 12px}
+  .search-hero h1{font-size:22px;letter-spacing:1px}
+
+  /* Grids — 2 columns */
+  .artist-grid,.col-grid{grid-template-columns:repeat(2,1fr);gap:0}
+  #results{grid-template-columns:repeat(2,1fr);gap:8px}
+
+  /* Dashboard */
+  .kpi-grid{grid-template-columns:repeat(2,1fr);gap:6px}
+  .kpi-val{font-size:22px}
+  .kpi-lbl{font-size:9px}
+  .dash-two-col{grid-template-columns:1fr}
+  .prog-big{font-size:28px}
+
+  /* Admin form */
+  .af-status-grid{grid-template-columns:1fr 1fr}
+  .af-tog{font-size:11px;padding:6px 2px}
 }
 </style>
 </head>
@@ -557,7 +620,7 @@ mark{background:#fef08a;color:#713f12;border-radius:2px;padding:0 1px}
     </div>
 
     <div class="search-hero">
-      <h1>Find a <span>Cassette</span></h1>
+      <h1>FIND A <span>CASSETTE</span></h1>
       <p>Search the Cassette Maroc archive</p>
     </div>
 
