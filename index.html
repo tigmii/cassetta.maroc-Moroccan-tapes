@@ -736,6 +736,7 @@ mark{background:#fef08a;color:#713f12;border-radius:2px;padding:0 1px}
           <button class="admin-btn" onclick="loadAdminTapes()">↺ Refresh</button>
         </div>
       </div>
+      <div class="filter-row" id="admin-letter-bar"></div>
       <div class="filter-row" id="admin-number-bar"></div>
       <div id="admin-status" class="admin-status"></div>
       <div class="admin-table-wrap">
@@ -2216,10 +2217,84 @@ function renderAdminTable() {
   }).join('')||'<tr><td colspan="99" style="text-align:center;padding:32px;color:var(--mut)">No tapes</td></tr>';
 }
 
-function filterAdminTable() {
-  const q = document.getElementById('admin-search-input').value.toLowerCase().trim();
-  _adminFiltered = q ? _adminTapes.filter(t=>Object.values(t).some(v=>String(v).toLowerCase().includes(q))) : _adminTapes;
+
+// ── Admin letter + number filters ─────────────────────────────────
+let _adminLetter = 'ALL';
+let _adminRange  = 'ALL';
+
+function buildAdminLetterBar() {
+  const bar = document.getElementById('admin-letter-bar');
+  if (!bar) return;
+  const letters = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'.split('');
+  const used = new Set(_adminTapes.map(t => (t['Artist']||'')[0]?.toUpperCase()).filter(Boolean));
+  bar.innerHTML =
+    `<button class="letter-btn ${_adminLetter==='ALL'?'active':''}" onclick="filterAdminByLetter('ALL')">ALL</button>` +
+    letters.map(l =>
+      `<button class="letter-btn ${!used.has(l)?'empty':''} ${_adminLetter===l?'active':''}" onclick="filterAdminByLetter('${l}')">${l}</button>`
+    ).join('') +
+    (_adminTapes.some(t=>/^[^a-zA-Z]/.test(t['Artist']||''))
+      ? `<button class="letter-btn ${_adminLetter==='#'?'active':''}" onclick="filterAdminByLetter('#')">#</button>` : '');
+}
+
+function buildAdminNumberBar() {
+  const bar = document.getElementById('admin-number-bar');
+  if (!bar) return;
+  const refs = _adminTapes.map(t=>parseInt(t['REF']||t['ref'])||0).filter(Boolean);
+  if (!refs.length) return;
+  const maxRef = Math.max(...refs);
+  const step = 50;
+  const ranges = [];
+  for (let i=1; i<=maxRef; i+=step) {
+    const end = Math.min(i+step-1, maxRef);
+    if (refs.some(r=>r>=i&&r<=end)) ranges.push({from:i,to:end,label:`${i}–${end}`});
+  }
+  bar.innerHTML =
+    `<button class="num-btn ${_adminRange==='ALL'?'active':''}" onclick="filterAdminByRange('ALL')">ALL</button>` +
+    ranges.map(r=>
+      `<button class="num-btn ${_adminRange===r.label?'active':''}" onclick="filterAdminByRange('${r.label}',${r.from},${r.to})">${r.label}</button>`
+    ).join('');
+}
+
+function filterAdminByLetter(letter) {
+  _adminLetter = letter;
+  document.querySelectorAll('#admin-letter-bar .letter-btn').forEach(b =>
+    b.classList.toggle('active', b.textContent.trim()===letter || (letter==='ALL'&&b.textContent.trim()==='ALL'))
+  );
+  applyAdminFilters();
+}
+
+function filterAdminByRange(label, from, to) {
+  _adminRange = label;
+  document.querySelectorAll('#admin-number-bar .num-btn').forEach(b =>
+    b.classList.toggle('active', b.textContent.trim()===label)
+  );
+  applyAdminFilters();
+}
+
+function applyAdminFilters() {
+  const q = (document.getElementById('admin-search-input')?.value||'').toLowerCase().trim();
+  _adminFiltered = _adminTapes.filter(t => {
+    // Letter filter
+    if (_adminLetter !== 'ALL') {
+      const first = (t['Artist']||'')[0]?.toUpperCase()||'';
+      if (_adminLetter === '#') { if (/[a-zA-Z]/.test(first)) return false; }
+      else { if (first !== _adminLetter) return false; }
+    }
+    // Range filter
+    if (_adminRange !== 'ALL') {
+      const parts = _adminRange.split('–').map(Number);
+      const ref = parseInt(t['REF']||t['ref'])||0;
+      if (ref < parts[0] || ref > parts[1]) return false;
+    }
+    // Search
+    if (q && !Object.values(t).some(v=>String(v).toLowerCase().includes(q))) return false;
+    return true;
+  });
   renderAdminTable();
+}
+
+function filterAdminTable() {
+  applyAdminFilters();
 }
 
 // ── Form ──────────────────────────────────────────────────────────
