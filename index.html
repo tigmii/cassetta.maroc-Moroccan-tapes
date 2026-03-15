@@ -563,6 +563,12 @@ mark{background:#fef08a;color:#713f12;border-radius:2px;padding:0 1px}
   .af-status-grid{grid-template-columns:1fr 1fr}
   .af-tog{font-size:11px;padding:6px 2px}
 }
+
+/* Mobile tap overlay */
+@media(hover:none){
+  .col-tile-img .tile-overlay{transition:opacity .2s ease}
+  .col-tile.tapped .tile-overlay{opacity:1}
+}
 </style>
 </head>
 <body>
@@ -890,6 +896,17 @@ mark{background:#fef08a;color:#713f12;border-radius:2px;padding:0 1px}
 </div>
 
 <script>
+// Mobile tap to show overlay
+function toggleTileTap(e, el) {
+  if (window.matchMedia('(hover:none)').matches) {
+    const already = el.classList.contains('tapped');
+    // Close all others
+    document.querySelectorAll('.col-tile.tapped').forEach(t => t.classList.remove('tapped'));
+    if (!already) el.classList.add('tapped');
+    e.stopPropagation();
+  }
+}
+
 
 // ═══════════════════════════════════════════════
 // CONFIG — paste your published CSV URL here
@@ -1557,7 +1574,7 @@ function colTile(t) {
   const safe_art = (artUrl||'').replace(/'/g,"\\'");
   const playBtn = '';
   return `
-    <div class="col-tile">
+    <div class="col-tile" onclick="toggleTileTap(event,this)">
       <div class="col-tile-img">
         ${artUrl
           ? `<img src="${esc(artUrl)}" alt="" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"/>
