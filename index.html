@@ -781,25 +781,19 @@ mark{background:#fef08a;color:#713f12;border-radius:2px;padding:0 1px}
 .pk-bg{
   min-height:calc(100vh - 52px);
   display:flex;align-items:center;justify-content:center;
-  background:radial-gradient(ellipse at 50% 40%, #1a0533 0%, #0d0d1a 60%, #000 100%);
+  background:#fff;
   position:relative;overflow:hidden;padding:20px;
-}
-.pk-bg::before{
-  content:'';position:absolute;inset:0;
-  background:url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.02'%3E%3Ccircle cx='30' cy='30' r='1'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
-  pointer-events:none;
 }
 
 /* ── Idle ── */
 .pk-idle{text-align:center;color:#fff}
-.pk-logo{font-size:64px;margin-bottom:16px;filter:drop-shadow(0 0 20px rgba(255,200,0,.6))}
+.pk-logo{font-size:64px;margin-bottom:16px}
 .pk-idle-title{
   font-size:42px;font-weight:900;letter-spacing:6px;
-  background:linear-gradient(135deg,#ffd700,#ff8c00,#ffd700);
-  -webkit-background-clip:text;-webkit-text-fill-color:transparent;
+  color:#1a1a1a;
   margin-bottom:10px;
 }
-.pk-idle-sub{font-size:15px;color:rgba(255,255,255,.55);margin-bottom:40px}
+.pk-idle-sub{font-size:15px;color:#888;margin-bottom:40px}
 .pk-draw-btn{
   padding:18px 44px;font-size:16px;font-weight:800;letter-spacing:.5px;
   background:linear-gradient(135deg,#ffd700,#ff8c00);
@@ -814,10 +808,10 @@ mark{background:#fef08a;color:#713f12;border-radius:2px;padding:0 1px}
 .pk-pack{text-align:center;cursor:pointer}
 .pk-pack-inner{
   width:180px;height:280px;margin:0 auto 20px;border-radius:14px;
-  background:linear-gradient(145deg,#1a0533,#3d0080,#1a0533);
-  border:2px solid rgba(255,215,0,.4);
+  background:linear-gradient(145deg,#1a1a2e,#2d1b6e,#1a1a2e);
+  border:2px solid rgba(255,215,0,.5);
   display:flex;flex-direction:column;align-items:center;justify-content:center;
-  box-shadow:0 0 40px rgba(180,0,255,.4),0 10px 40px rgba(0,0,0,.5);
+  box-shadow:0 0 30px rgba(100,0,200,.25),0 8px 30px rgba(0,0,0,.18);
   position:relative;overflow:hidden;
   animation:packFloat 2s ease-in-out infinite;
   transition:transform .1s;
@@ -839,7 +833,7 @@ mark{background:#fef08a;color:#713f12;border-radius:2px;padding:0 1px}
   animation:packShine 3s linear infinite;
 }
 @keyframes packShine{from{transform:translateX(-100%) rotate(45deg)}to{transform:translateX(100%) rotate(45deg)}}
-.pk-pack-hint{color:rgba(255,255,255,.4);font-size:13px;animation:blink 1.5s ease-in-out infinite}
+.pk-pack-hint{color:#aaa;font-size:13px;animation:blink 1.5s ease-in-out infinite}
 @keyframes blink{0%,100%{opacity:.4}50%{opacity:1}}
 
 /* ── Pack open animation ── */
@@ -894,7 +888,11 @@ mark{background:#fef08a;color:#713f12;border-radius:2px;padding:0 1px}
 
 
 .pk-card-img-wrap img{width:100%;height:100%;object-fit:cover;display:block}
-.pk-card-img-placeholder{font-size:72px}
+.pk-card-img-placeholder{
+  width:100%;height:100%;
+  display:flex;align-items:center;justify-content:center;
+  font-size:32px;font-weight:900;color:#ccc;background:#f5f5f5;
+}
 
 .pk-card-body{
   padding:10px 12px 12px;background:#fff;
@@ -1444,10 +1442,11 @@ function pkRevealCard(tape) {
 
   const imgWrap = document.getElementById('pk-card-img-wrap');
   const artUrl = fixArtUrl(tape.artwork);
+  const initials2 = (tape.artist||'?').split(/\s+/).map(w=>w[0]).join('').toUpperCase().slice(0,2);
   if (artUrl) {
-    imgWrap.innerHTML = `<img src="${artUrl}" alt="" onerror="this.parentNode.innerHTML='<div class=pk-card-img-placeholder>📼</div>'">`;
+    imgWrap.innerHTML = `<img src="${artUrl}" alt="" loading="lazy" style="width:100%;height:100%;object-fit:cover;display:block" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'"><div class='pk-card-img-placeholder' style='display:none'>${initials2}</div>`;
   } else {
-    imgWrap.innerHTML = '<div class="pk-card-img-placeholder">📼</div>';
+    imgWrap.innerHTML = `<div class='pk-card-img-placeholder'>${initials2}</div>`;
   }
 
   // Flash + flip
@@ -2658,31 +2657,42 @@ const ADMIN_PASS   = 'cassettemaroc2024'; // ← change this
 let isAdmin   = false;
 let isLoggedIn = false;
 
+function doLogin(admin) {
+  isLoggedIn = true;
+  isAdmin = admin;
+  localStorage.setItem('cm_session', admin ? 'admin' : 'visitor');
+  document.getElementById('login-wall').style.display = 'none';
+  const mh = document.getElementById('masthead');
+  if (mh) mh.style.display = '';
+  if (isAdmin) {
+    document.getElementById('dashboard-tab').style.display = '';
+    document.getElementById('admin-tab').style.display = '';
+    document.getElementById('admin-btn').style.display = '';
+    const mdt = document.getElementById('mob-dashboard-tab');
+    const mat = document.getElementById('mob-admin-tab');
+    if (mdt) mdt.style.display = '';
+    if (mat) mat.style.display = '';
+  }
+  loadData();
+}
+
 function submitLogin() {
   const val = document.getElementById('login-pass').value;
   if (val === VISITOR_PASS || val === ADMIN_PASS) {
-    isLoggedIn = true;
-    isAdmin = (val === ADMIN_PASS);
-    document.getElementById('login-wall').style.display = 'none';
-    const mh = document.getElementById('masthead');
-    if (mh) mh.style.display = '';
-    if (isAdmin) {
-      document.getElementById('dashboard-tab').style.display = '';
-      document.getElementById('admin-tab').style.display = '';
-      document.getElementById('admin-btn').style.display = '';
-      const mdt = document.getElementById('mob-dashboard-tab');
-      const mat = document.getElementById('mob-admin-tab');
-      if (mdt) mdt.style.display = '';
-      if (mat) mat.style.display = '';
-    }
-    loadData();
+    doLogin(val === ADMIN_PASS);
   } else {
     const err = document.getElementById('login-error');
-    err.textContent = 'Incorrect password';
+    err.textContent = 'Mot de passe incorrect';
     document.getElementById('login-wall').querySelector('.login-box').classList.add('shake');
     setTimeout(() => document.getElementById('login-wall').querySelector('.login-box').classList.remove('shake'), 400);
   }
 }
+
+// Auto-login from saved session
+(function restoreSession() {
+  const s = localStorage.getItem('cm_session');
+  if (s === 'visitor' || s === 'admin') { doLogin(s === 'admin'); }
+})();
 
 
 function dismissLoginWall() {
@@ -2692,12 +2702,6 @@ function dismissLoginWall() {
   setTimeout(() => { wall.style.display = 'none'; }, 400);
 }
 
-function toggleLoginEye() {
-  const inp = document.getElementById('login-pass');
-  const eye = document.getElementById('login-eye');
-  if (inp.type === 'password') { inp.type = 'text'; eye.textContent = '🙈'; }
-  else { inp.type = 'password'; eye.textContent = '👁'; }
-}
 
 function checkAdminSession() {
   const auth = sessionStorage.getItem('auth');
@@ -3208,8 +3212,7 @@ function setAdminStatus(type, msg) {
   el.className='admin-status '+type; el.textContent=msg;
 }
 
+
 </script>
-
-
-<!-- ═══ RANDOM PAGE ═══ -->
->
+</body>
+</html>
