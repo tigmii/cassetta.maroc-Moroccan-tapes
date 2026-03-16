@@ -772,90 +772,252 @@ mark{background:#fef08a;color:#713f12;border-radius:2px;padding:0 1px}
   #nav-tabs-desktop{display:none !important}
 }
 
-/* ── RANDOM TAPE MODAL ── */
-.col-random-btn{background:#23b202 !important;color:#fff !important;border-color:#23b202 !important}
-.col-random-btn:hover{background:#1a8c01 !important}
+/* ══════════════ SURPRISE PAGE ══════════════ */
+.surp-wrap{
+  min-height:calc(100vh - 52px);
+  display:flex;flex-direction:column;align-items:center;
+  padding:48px 20px 80px;
+  background:linear-gradient(160deg,#fdfcfb 0%,#f5f0ea 100%);
+}
+.surp-hero{text-align:center;margin-bottom:48px}
+.surp-title{
+  font-size:52px;font-weight:900;letter-spacing:8px;
+  color:#1a1a1a;margin-bottom:10px;font-family:Arial,sans-serif;
+}
+.surp-sub{font-size:15px;color:#888;margin-bottom:32px;font-weight:500}
+.surp-btn{
+  display:inline-flex;align-items:center;gap:10px;
+  padding:16px 36px;background:#c2410c;color:#fff;
+  border:none;border-radius:50px;cursor:pointer;
+  font-size:15px;font-weight:800;letter-spacing:.5px;
+  transition:background .2s, transform .15s, box-shadow .2s;
+  box-shadow:0 4px 16px rgba(194,65,12,.35);
+}
+.surp-btn:hover{background:#9a3412;transform:translateY(-2px);box-shadow:0 8px 24px rgba(194,65,12,.4)}
+.surp-btn:active{transform:scale(.96)}
+.surp-btn-icon{font-size:20px}
 
-.rnd-overlay{
-  display:none;position:fixed;inset:0;z-index:500;
-  background:rgba(0,0,0,.5);backdrop-filter:blur(3px);
+/* Reveal container */
+.surp-reveal{
+  display:flex;flex-direction:column;align-items:center;gap:32px;
+  width:100%;max-width:420px;
+}
+
+/* ── Cassette shape ── */
+.surp-cassette-wrap{
+  perspective:800px;
+  opacity:0;transform:translateY(40px) scale(.85);
+  transition:opacity .6s ease, transform .6s ease;
+}
+.surp-cassette-wrap.visible{opacity:1;transform:translateY(0) scale(1)}
+
+.surp-cassette{
+  width:260px;height:160px;position:relative;
+  transform-style:preserve-3d;
+  animation:none;
+}
+.surp-cassette.spin{animation:cassetteSpin .8s ease}
+@keyframes cassetteSpin{
+  0%{transform:rotateY(0deg)}
+  50%{transform:rotateY(180deg)}
+  100%{transform:rotateY(360deg)}
+}
+
+.surp-cassette-front{
+  width:260px;height:160px;
+  background:#1a1a1a;border-radius:12px;
+  position:relative;overflow:hidden;
+  box-shadow:0 12px 40px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.08);
+}
+.surp-cassette-hole{
+  position:absolute;top:24px;width:34px;height:34px;
+  background:#111;border-radius:50%;
+  border:3px solid #333;
+  box-shadow:inset 0 2px 6px rgba(0,0,0,.6);
+}
+.surp-cassette-hole.left{left:22px}
+.surp-cassette-hole.right{right:22px}
+.surp-cassette-label{
+  position:absolute;top:14px;left:64px;right:64px;bottom:14px;
+  border-radius:6px;overflow:hidden;
+  background:#fff;
+  box-shadow:0 2px 8px rgba(0,0,0,.3);
+}
+.surp-label-inner{
+  width:100%;height:100%;
+  background:#f5f5f5;
+  display:flex;flex-direction:column;
   align-items:center;justify-content:center;
+  text-align:center;padding:8px;
+  font-family:Arial,sans-serif;
 }
-.rnd-overlay.open{display:flex}
-.rnd-box{
+.surp-label-inner.has-img img{
+  width:100%;height:100%;object-fit:cover;display:block;
+}
+.surp-label-ref{font-size:9px;font-weight:700;color:#23b202;letter-spacing:.8px;margin-bottom:3px}
+.surp-label-artist{font-size:11px;font-weight:800;color:#1a1a1a;line-height:1.2;margin-bottom:2px;
+  overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.surp-label-album{font-size:9px;color:#666;
+  overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+.surp-cassette-tape{
+  position:absolute;bottom:16px;left:50%;transform:translateX(-50%);
+  width:100px;height:8px;background:#333;border-radius:4px;
+}
+
+/* ── Info card ── */
+.surp-info-card{
   background:#fff;border-radius:16px;
-  width:calc(100% - 32px);max-width:640px;
-  max-height:90vh;overflow-y:auto;
-  box-shadow:0 20px 60px rgba(0,0,0,.25);
-  display:flex;flex-direction:column;
+  padding:24px 28px;width:100%;
+  box-shadow:0 4px 24px rgba(0,0,0,.08);border:1px solid #eee;
+  text-align:center;
+  opacity:0;transform:translateY(20px);
+  transition:opacity .5s .4s ease, transform .5s .4s ease;
 }
-.rnd-header{
-  display:flex;align-items:center;justify-content:space-between;
-  padding:18px 20px 14px;border-bottom:1px solid #f0f0f0;
-  position:sticky;top:0;background:#fff;z-index:1;
+.surp-info-card.visible{opacity:1;transform:translateY(0)}
+.surp-info-ref{font-size:11px;font-weight:800;color:#23b202;letter-spacing:1px;margin-bottom:6px}
+.surp-info-artist{font-size:22px;font-weight:900;color:#1a1a1a;margin-bottom:4px;line-height:1.2}
+.surp-info-album{font-size:15px;color:#555;font-style:italic;margin-bottom:12px}
+.surp-info-meta{font-size:12px;color:#aaa;margin-bottom:18px;line-height:1.6}
+.surp-again{
+  padding:10px 28px;background:#f5f5f5;color:#555;
+  border:1.5px solid #e5e5e5;border-radius:50px;
+  font-size:13px;font-weight:700;cursor:pointer;
+  transition:background .15s, transform .1s;
 }
-.rnd-title{font-size:17px;font-weight:800;color:#1a1a1a;letter-spacing:.2px}
-.rnd-close{
-  background:none;border:none;font-size:16px;color:#999;
-  cursor:pointer;padding:4px 6px;border-radius:6px;line-height:1;
-}
-.rnd-close:hover{color:#1a1a1a;background:#f5f5f5}
-.rnd-controls{
-  display:flex;align-items:center;gap:14px;
-  padding:14px 20px;border-bottom:1px solid #f5f5f5;flex-wrap:wrap;
-}
-.rnd-label{font-size:13px;font-weight:700;color:#555;flex:1}
-.rnd-picker{
-  display:flex;align-items:center;gap:0;
-  border:1.5px solid #e0e0e0;border-radius:10px;overflow:hidden;
-}
-.rnd-dec,.rnd-inc{
-  width:34px;height:34px;background:#f9f9f9;border:none;
-  font-size:18px;font-weight:700;cursor:pointer;color:#555;
-  transition:background .15s;
-}
-.rnd-dec:hover,.rnd-inc:hover{background:#eee;color:#1a1a1a}
-.rnd-count{
-  min-width:42px;text-align:center;font-size:16px;font-weight:800;
-  color:#1a1a1a;padding:0 4px;
-}
-.rnd-go{
-  padding:8px 22px;background:#c2410c;color:#fff;
-  border:none;border-radius:10px;font-size:13px;font-weight:800;
-  cursor:pointer;transition:background .15s, transform .1s;
-}
-.rnd-go:hover{background:#9a3412}
-.rnd-go:active{transform:scale(.97)}
-.rnd-grid{
-  display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));
-  gap:0;padding:16px;
-}
-.rnd-card{
-  display:flex;flex-direction:column;
-  border-radius:10px;overflow:hidden;
-  border:1px solid #eee;margin:6px;
-  transition:transform .15s, box-shadow .15s;
-  cursor:default;
-}
-.rnd-card:hover{transform:translateY(-2px);box-shadow:0 6px 18px rgba(0,0,0,.1)}
-.rnd-card-img{
-  width:100%;aspect-ratio:1;object-fit:cover;
-  background:#f5f5f5;display:block;
-}
-.rnd-card-img-placeholder{
-  width:100%;aspect-ratio:1;background:#f0f0f0;
-  display:flex;align-items:center;justify-content:center;
-  font-size:28px;color:#ccc;
-}
-.rnd-card-info{padding:8px 10px 10px}
-.rnd-card-ref{font-size:10px;font-weight:700;color:#23b202;letter-spacing:.5px;margin-bottom:2px}
-.rnd-card-artist{font-size:12px;font-weight:700;color:#1a1a1a;margin-bottom:1px;
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.rnd-card-album{font-size:11px;color:#888;
-  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.rnd-empty{padding:32px;text-align:center;color:#aaa;font-size:14px;grid-column:1/-1}
+.surp-again:hover{background:#eee;color:#1a1a1a}
+.surp-again:active{transform:scale(.96)}
+
 @media(max-width:480px){
-  .rnd-grid{grid-template-columns:repeat(2,1fr);padding:10px}
+  .surp-title{font-size:36px;letter-spacing:5px}
+  .surp-cassette,.surp-cassette-front{width:220px;height:136px}
+  .surp-cassette-hole{width:28px;height:28px;top:18px}
+  .surp-cassette-hole.left{left:16px}
+  .surp-cassette-hole.right{right:16px}
+  .surp-cassette-label{left:52px;right:52px;top:10px;bottom:10px}
+  .surp-cassette-tape{width:80px}
+}
+
+/* ══════════════════════════════
+   RANDOM PAGE
+══════════════════════════════ */
+.rnd-page-wrap{
+  min-height:calc(100vh - 52px);
+  display:flex;align-items:center;justify-content:center;
+  padding:40px 20px;
+}
+
+/* ── Idle ── */
+.rnd-idle{text-align:center}
+.rnd-idle-icon{font-size:64px;margin-bottom:16px;animation:rnd-float 3s ease-in-out infinite}
+@keyframes rnd-float{0%,100%{transform:translateY(0)}50%{transform:translateY(-8px)}}
+.rnd-idle-title{
+  font-size:28px;font-weight:900;letter-spacing:3px;
+  color:#1a1a1a;margin-bottom:8px;font-family:Arial,sans-serif;
+}
+.rnd-idle-sub{font-size:14px;color:#888;margin-bottom:32px}
+
+/* ── Roll button ── */
+.rnd-roll-btn{
+  padding:14px 36px;background:#c2410c;color:#fff;
+  border:none;border-radius:12px;font-size:15px;font-weight:800;
+  cursor:pointer;letter-spacing:.5px;
+  transition:background .2s, transform .1s, box-shadow .2s;
+  box-shadow:0 4px 16px rgba(194,65,12,.3);
+}
+.rnd-roll-btn:hover{background:#9a3412;box-shadow:0 6px 20px rgba(194,65,12,.4)}
+.rnd-roll-btn:active{transform:scale(.97)}
+
+/* ── Reveal wrapper ── */
+.rnd-reveal{
+  text-align:center;display:flex;flex-direction:column;
+  align-items:center;gap:24px;
+}
+
+/* ── 3‑D card ── */
+.rnd-cassette-wrap{
+  width:220px;height:220px;perspective:800px;cursor:pointer;
+  position:relative;
+}
+.rnd-face{
+  width:100%;height:100%;border-radius:16px;
+  position:absolute;top:0;left:0;
+  backface-visibility:hidden;-webkit-backface-visibility:hidden;
+  transition:transform .7s cubic-bezier(.4,.2,.2,1);
+  display:flex;align-items:center;justify-content:center;
+}
+.rnd-face-front{
+  background:linear-gradient(135deg,#1a1a1a,#333);
+  border:2px solid #444;
+  transform:rotateY(0deg);
+}
+.rnd-face-back{
+  transform:rotateY(-180deg);
+  overflow:hidden;
+  background:#f0f0f0;
+  border:2px solid #e0e0e0;
+}
+/* flipped state */
+.rnd-cassette-wrap.flipped .rnd-face-front{transform:rotateY(180deg)}
+.rnd-cassette-wrap.flipped .rnd-face-back{transform:rotateY(0deg)}
+
+.rnd-qmark{
+  font-size:80px;font-weight:900;color:#fff;
+  opacity:.2;font-family:Arial,sans-serif;
+  animation:rnd-pulse 1.5s ease-in-out infinite;
+}
+@keyframes rnd-pulse{0%,100%{opacity:.15}50%{opacity:.35}}
+
+.rnd-cover{
+  width:100%;height:100%;object-fit:cover;display:block;border-radius:14px;
+}
+.rnd-cover-placeholder{
+  font-size:64px;display:flex;align-items:center;justify-content:center;
+  width:100%;height:100%;
+}
+
+/* ── Tape info ── */
+.rnd-info{
+  opacity:0;transform:translateY(12px);
+  transition:opacity .5s ease .3s, transform .5s ease .3s;
+}
+.rnd-info.visible{opacity:1;transform:translateY(0)}
+.rnd-info-ref{
+  font-size:12px;font-weight:800;letter-spacing:1px;
+  color:#23b202;margin-bottom:6px;
+}
+.rnd-info-artist{
+  font-size:22px;font-weight:900;color:#1a1a1a;
+  margin-bottom:4px;font-family:Arial,sans-serif;
+}
+.rnd-info-album{font-size:15px;color:#666;margin-bottom:10px}
+.rnd-info-tags{display:flex;gap:6px;justify-content:center;flex-wrap:wrap}
+.rnd-tag{
+  padding:4px 10px;background:#f5f5f5;border-radius:20px;
+  font-size:11px;color:#666;font-weight:600;
+}
+
+.rnd-again-btn{
+  padding:11px 28px;font-size:14px;
+  background:#1a1a1a;box-shadow:0 4px 14px rgba(0,0,0,.2);
+}
+.rnd-again-btn:hover{background:#333;box-shadow:0 6px 18px rgba(0,0,0,.3)}
+
+/* Shake animation when rolling */
+@keyframes rnd-shake{
+  0%,100%{transform:rotate(0)}
+  15%{transform:rotate(-8deg) scale(1.05)}
+  30%{transform:rotate(8deg) scale(1.05)}
+  45%{transform:rotate(-6deg)}
+  60%{transform:rotate(6deg)}
+  75%{transform:rotate(-3deg)}
+  90%{transform:rotate(3deg)}
+}
+.rnd-cassette-wrap.shaking{animation:rnd-shake .6s ease}
+
+@media(max-width:480px){
+  .rnd-cassette-wrap{width:180px;height:180px}
+  .rnd-idle-title{font-size:22px}
+  .rnd-info-artist{font-size:18px}
 }
 </style>
 </head>
@@ -894,6 +1056,8 @@ mark{background:#fef08a;color:#713f12;border-radius:2px;padding:0 1px}
   <div class="nav-tabs" id="nav-tabs-desktop">
     <button class="tab active" onclick="showPage('search',this)">Search</button>
     <button class="tab" onclick="showPage('collection',this)">Collection</button>
+    <button class="tab" id="surprise-tab" onclick="showPage('surprise',this)">🎲 Surprise</button>
+    <button class="tab" id="random-tab" onclick="showPage('random',this)">🎲 Random</button>
     <button class="tab" id="dashboard-tab" style="display:none" onclick="showPage('dashboard',this)">Dashboard</button>
     <button class="tab" id="admin-tab" style="display:none" onclick="showPage('admin',this)">
       <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/></svg>
@@ -921,6 +1085,8 @@ mark{background:#fef08a;color:#713f12;border-radius:2px;padding:0 1px}
 <div id="mobile-menu" class="mobile-menu">
   <button class="mob-tab active" onclick="mobNav('search')">🔍 Search</button>
   <button class="mob-tab" onclick="mobNav('collection')">📼 Collection</button>
+  <button class="mob-tab" id="mob-surprise-tab" onclick="mobNav('surprise')">🎲 Surprise</button>
+  <button class="mob-tab" onclick="mobNav('random')">🎲 Random</button>
   <button class="mob-tab" id="mob-dashboard-tab" style="display:none" onclick="mobNav('dashboard')">📊 Dashboard</button>
   <button class="mob-tab" id="mob-admin-tab" style="display:none" onclick="mobNav('admin')">✏️ Admin</button>
 </div>
@@ -1006,9 +1172,7 @@ mark{background:#fef08a;color:#713f12;border-radius:2px;padding:0 1px}
       <button class="col-mode-btn" id="mode-btn-label" onclick="switchColMode('label')">
         By Label
       </button>
-      <button class="col-mode-btn col-random-btn" onclick="openRandomModal()">
-        🎲 Random
-      </button>
+
     </div>
 
     <!-- ARTIST MODE -->
@@ -1049,6 +1213,41 @@ mark{background:#fef08a;color:#713f12;border-radius:2px;padding:0 1px}
           </div>
         </div>
         <div class="col-grid" id="col-label-tapes-grid"></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ═══════════════ SURPRISE PAGE ═══════════════ -->
+<div class="page" id="page-surprise" style="display:none">
+  <div class="surp-wrap">
+    <div class="surp-hero">
+      <h1 class="surp-title">SURPRISE</h1>
+      <p class="surp-sub">Découvrez une cassette au hasard de l'archive</p>
+      <button class="surp-btn" id="surp-btn" onclick="revealTape()">
+        <span class="surp-btn-icon">🎲</span>
+        <span class="surp-btn-text">Tirer une cassette</span>
+      </button>
+    </div>
+    <div class="surp-reveal" id="surp-reveal">
+      <div class="surp-cassette-wrap" id="surp-cassette-wrap">
+        <div class="surp-cassette" id="surp-cassette">
+          <div class="surp-cassette-front">
+            <div class="surp-cassette-hole left"></div>
+            <div class="surp-cassette-hole right"></div>
+            <div class="surp-cassette-label" id="surp-label">
+              <div class="surp-label-inner" id="surp-label-inner"></div>
+            </div>
+            <div class="surp-cassette-tape"></div>
+          </div>
+        </div>
+      </div>
+      <div class="surp-info-card" id="surp-info-card">
+        <div class="surp-info-ref" id="surp-info-ref"></div>
+        <div class="surp-info-artist" id="surp-info-artist"></div>
+        <div class="surp-info-album" id="surp-info-album"></div>
+        <div class="surp-info-meta" id="surp-info-meta"></div>
+        <button class="surp-again" onclick="revealTape()">🎲 Une autre</button>
       </div>
     </div>
   </div>
@@ -1214,49 +1413,109 @@ mark{background:#fef08a;color:#713f12;border-radius:2px;padding:0 1px}
 </div>
 
 <script>
-// ── RANDOM TAPE ──
-let _rndCount = 6;
-
-function openRandomModal() {
-  document.getElementById('rnd-count-display').textContent = _rndCount;
-  document.getElementById('rnd-grid').innerHTML = '';
-  document.getElementById('random-modal').classList.add('open');
-}
-
-function closeRandomModal(e) {
-  if (e && e.target !== document.getElementById('random-modal')) return;
-  document.getElementById('random-modal').classList.remove('open');
-}
-
-function changeRndCount(delta) {
-  _rndCount = Math.max(1, Math.min(50, _rndCount + delta));
-  document.getElementById('rnd-count-display').textContent = _rndCount;
-}
-
-function drawRandomTapes() {
+// ══════════════════════════════
+// RANDOM PAGE
+// ══════════════════════════════
+function rollRandomTape() {
   const pool = ALL_TAPES.filter(t => t.artist || t.album);
-  const shuffled = [...pool].sort(() => Math.random() - .5);
-  const picks = shuffled.slice(0, _rndCount);
-  const grid = document.getElementById('rnd-grid');
-  if (picks.length === 0) {
-    grid.innerHTML = '<div class="rnd-empty">No tapes available.</div>';
-    return;
+  if (!pool.length) return;
+
+  // Show reveal area, hide idle
+  document.getElementById('rnd-idle').style.display = 'none';
+  document.getElementById('rnd-reveal').style.display = 'flex';
+
+  // Reset card to face-front
+  const wrap = document.getElementById('rnd-cassette-wrap');
+  const info = document.getElementById('rnd-info');
+  wrap.classList.remove('flipped','shaking');
+  info.classList.remove('visible');
+
+  // Pick random tape
+  const t = pool[Math.floor(Math.random() * pool.length)];
+
+  // Populate info (hidden until flip)
+  const artUrl = fixArtUrl(t.artwork);
+  const cover = document.getElementById('rnd-cover');
+  const ph    = document.getElementById('rnd-cover-placeholder');
+
+  if (artUrl) {
+    cover.src = artUrl;
+    cover.style.display = 'block';
+    ph.style.display = 'none';
+    cover.onerror = () => { cover.style.display='none'; ph.style.display='flex'; };
+  } else {
+    cover.style.display = 'none';
+    ph.style.display = 'flex';
   }
-  grid.innerHTML = picks.map(t => {
+
+  document.getElementById('rnd-info-ref').textContent    = t.ref ? '#' + t.ref : '';
+  document.getElementById('rnd-info-artist').textContent = t.artist || '—';
+  document.getElementById('rnd-info-album').textContent  = t.album  || '—';
+
+  const tags = [t.genre, t.label].filter(Boolean);
+  document.getElementById('rnd-info-tags').innerHTML =
+    tags.map(g => `<span class="rnd-tag">${esc(g)}</span>`).join('');
+
+  // Shake then flip after short delay
+  setTimeout(() => {
+    wrap.classList.add('shaking');
+    setTimeout(() => {
+      wrap.classList.remove('shaking');
+      wrap.classList.add('flipped');
+      setTimeout(() => info.classList.add('visible'), 400);
+    }, 650);
+  }, 80);
+}
+
+// ══════════════ SURPRISE PAGE ══════════════
+function revealTape() {
+  const pool = ALL_TAPES.filter(t => t.artist || t.album);
+  if (!pool.length) return;
+  const t = pool[Math.floor(Math.random() * pool.length)];
+
+  // Reset animations
+  const wrap  = document.getElementById('surp-cassette-wrap');
+  const cass  = document.getElementById('surp-cassette');
+  const card  = document.getElementById('surp-info-card');
+  const label = document.getElementById('surp-label-inner');
+
+  wrap.classList.remove('visible');
+  card.classList.remove('visible');
+  cass.classList.remove('spin');
+
+  // Short delay then animate in
+  setTimeout(() => {
+    // Build label content
     const artUrl = fixArtUrl(t.artwork);
-    const img = artUrl
-      ? `<img class="rnd-card-img" src="${artUrl}" alt="" onerror="this.style.display='none';this.nextSibling.style.display='flex'">`
-        + `<div class="rnd-card-img-placeholder" style="display:none">📼</div>`
-      : `<div class="rnd-card-img-placeholder">📼</div>`;
-    return `<div class="rnd-card">
-      ${img}
-      <div class="rnd-card-info">
-        <div class="rnd-card-ref">#${t.ref||'—'}</div>
-        <div class="rnd-card-artist">${esc(t.artist||'—')}</div>
-        <div class="rnd-card-album">${esc(t.album||'—')}</div>
-      </div>
-    </div>`;
-  }).join('');
+    if (artUrl) {
+      label.className = 'surp-label-inner has-img';
+      label.innerHTML = `<img src="${artUrl}" alt="" onerror="this.parentNode.className='surp-label-inner';this.parentNode.innerHTML=buildLabelText('${(t.ref||'').replace(/'/g,'\'')}','${(t.artist||'').replace(/'/g,'\'')}','${(t.album||'').replace(/'/g,'\'')}')">`;
+    } else {
+      label.className = 'surp-label-inner';
+      label.innerHTML = buildLabelText(t.ref||'', t.artist||'', t.album||'');
+    }
+
+    // Show cassette
+    wrap.classList.add('visible');
+    void cass.offsetWidth;
+    cass.classList.add('spin');
+
+    // Fill info card
+    document.getElementById('surp-info-ref').textContent = t.ref ? '#' + t.ref : '';
+    document.getElementById('surp-info-artist').textContent = t.artist || '—';
+    document.getElementById('surp-info-album').textContent = t.album || '—';
+    const meta = [t.genre, t.label, t.year].filter(Boolean).join(' · ');
+    document.getElementById('surp-info-meta').textContent = meta;
+
+    // Show card after spin
+    setTimeout(() => { card.classList.add('visible'); }, 500);
+  }, 80);
+}
+
+function buildLabelText(ref, artist, album) {
+  return `<div class="surp-label-ref">${ref ? '#'+ref : ''}</div>`
+       + `<div class="surp-label-artist">${esc(artist)}</div>`
+       + `<div class="surp-label-album">${esc(album)}</div>`;
 }
 
 function toggleHamburger() {
@@ -3008,23 +3267,39 @@ function setAdminStatus(type, msg) {
 
 </script>
 
-<!-- RANDOM TAPE MODAL -->
-<div id="random-modal" class="rnd-overlay" onclick="closeRandomModal(event)">
-  <div class="rnd-box">
-    <div class="rnd-header">
-      <span class="rnd-title">🎲 Random Tapes</span>
-      <button class="rnd-close" onclick="document.getElementById('random-modal').style.display='none'">✕</button>
+
+<!-- ═══ RANDOM PAGE ═══ -->
+<div class="page" id="page-random">
+  <div class="rnd-page-wrap">
+    <!-- idle state -->
+    <div class="rnd-idle" id="rnd-idle">
+      <div class="rnd-idle-icon">🎲</div>
+      <h2 class="rnd-idle-title">RANDOM TAPE</h2>
+      <p class="rnd-idle-sub">Discover a random cassette from the archive</p>
+      <button class="rnd-roll-btn" onclick="rollRandomTape()">Roll the dice</button>
     </div>
-    <div class="rnd-controls">
-      <label class="rnd-label">Number of tapes</label>
-      <div class="rnd-picker">
-        <button class="rnd-dec" onclick="changeRndCount(-1)">−</button>
-        <span class="rnd-count" id="rnd-count-display">6</span>
-        <button class="rnd-inc" onclick="changeRndCount(1)">+</button>
+
+    <!-- reveal state (hidden until rolled) -->
+    <div class="rnd-reveal" id="rnd-reveal" style="display:none">
+      <div class="rnd-cassette-wrap" id="rnd-cassette-wrap">
+        <!-- front (question mark) -->
+        <div class="rnd-face rnd-face-front" id="rnd-face-front">
+          <div class="rnd-qmark">?</div>
+        </div>
+        <!-- back (tape info) -->
+        <div class="rnd-face rnd-face-back" id="rnd-face-back">
+          <img class="rnd-cover" id="rnd-cover" src="" alt=""/>
+          <div class="rnd-cover-placeholder" id="rnd-cover-placeholder">📼</div>
+        </div>
       </div>
-      <button class="rnd-go" onclick="drawRandomTapes()">Draw!</button>
+      <div class="rnd-info" id="rnd-info">
+        <div class="rnd-info-ref" id="rnd-info-ref"></div>
+        <div class="rnd-info-artist" id="rnd-info-artist"></div>
+        <div class="rnd-info-album" id="rnd-info-album"></div>
+        <div class="rnd-info-tags" id="rnd-info-tags"></div>
+      </div>
+      <button class="rnd-roll-btn rnd-again-btn" onclick="rollRandomTape()">Roll again</button>
     </div>
-    <div class="rnd-grid" id="rnd-grid"></div>
   </div>
 </div>
 </body>
