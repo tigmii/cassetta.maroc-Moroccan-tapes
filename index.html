@@ -1408,7 +1408,59 @@ mark{background:#fef08a;color:#713f12;border-radius:2px;padding:0 1px}
   </div>
 </div>
 
-<script>_savedScrollPos = 0;
+<script>
+// ── PAGE & SCROLL STATE PERSISTENCE ──
+let _scrollSaveTimer = null;
+
+function saveScrollState() {
+  // Save current scroll for the active page
+  const activePage = localStorage.getItem('active_page') || 'search';
+  sessionStorage.setItem('scroll_' + activePage, String(window.scrollY));
+}
+
+function restoreScrollState(pageId) {
+  const saved = sessionStorage.getItem('scroll_' + pageId);
+  if (saved) {
+    requestAnimationFrame(() => {
+      requestAnimationFrame(() => window.scrollTo(0, parseInt(saved, 10) || 0));
+    });
+  }
+}
+
+// Debounced scroll save
+window.addEventListener('scroll', () => {
+  clearTimeout(_scrollSaveTimer);
+  _scrollSaveTimer = setTimeout(saveScrollState, 150);
+}, { passive: true });
+
+
+// ── Restore collection sub-state after page load ──
+function restoreCollectionState() {
+  const colMode  = sessionStorage.getItem('col_mode');
+  if (colMode === 'label') {
+    switchColMode('label');
+    const btn = document.getElementById('mode-btn-label');
+    if (btn) { btn.classList.add('active'); document.getElementById('mode-btn-artist')?.classList.remove('active'); }
+  }
+
+  const subMode = sessionStorage.getItem('col_sub_mode');
+  if (subMode === 'artist_detail') {
+    const name = sessionStorage.getItem('col_sub_artist');
+    if (name) {
+      const scrollPos = parseInt(sessionStorage.getItem('scroll_collection') || '0');
+      _savedScrollPos = scrollPos;
+      showArtist(name);
+    }
+  } else if (subMode === 'label_detail') {
+    const name = sessionStorage.getItem('col_sub_label');
+    if (name) {
+      const scrollPos = parseInt(sessionStorage.getItem('scroll_collection') || '0');
+      _savedScrollPosLabel = scrollPos;
+      showLabel(name);
+    }
+  }
+}
+_savedScrollPos = 0;
 let _savedScrollPosLabel = 0;
 
 // ── HAMBURGER MENU ──
@@ -1707,6 +1759,9 @@ async function loadData() {
 
     ALL_TAPES = valid.map((r, i) => normalise(r, i));
     renderDashboard(); renderCollection(); doSearch(); buildFilters();
+    if (localStorage.getItem('active_page') === 'collection') {
+      setTimeout(restoreCollectionState, 50);
+    }
     setStatus('ok', `✓ ${ALL_TAPES.length} tapes loaded`);
     try { localStorage.setItem('tape_cache', JSON.stringify({ ts: Date.now(), data: ALL_TAPES })); } catch(e) {}
   } catch(e) {
@@ -1814,6 +1869,7 @@ function normalise(r, i) {
     mainGenre: mg(get(r,'Genre','Genre_Category','Genre / Category','GENRE','Style')),
     artwork:   _artKey ? (r[_artKey]||'').trim() : '',
     date:      get(r,'dates','date','Date','Dates','DATE','date added','Date Added','created','Created').trim(),
+    label_logo:get(r,'Label Logo','label_logo','LabelLogo','LABEL_LOGO','Label_Logo','logo_label','Logo Label').trim(),
     music:     get(r,'music','Music','MUSIC','audio','Audio','url','URL','link','Link','mp3','MP3').trim(),
     tracks:    get(r,'tracks','Tracks','TRACKS','tracklist','Tracklist','TrackList','track list','Track List').trim(),
   };
@@ -2125,6 +2181,7 @@ function renderArtistGrid(map, artists) {
 }
 
 function switchColMode(mode) {
+  sessionStorage.setItem('col_mode', mode);
   _colMode = mode;
   document.getElementById('col-mode-artist').style.display = mode === 'artist' ? '' : 'none';
   document.getElementById('col-mode-label').style.display  = mode === 'label'  ? '' : 'none';
@@ -2188,9 +2245,10 @@ function renderLabelGrid(lmap, labels, letter) {
     const digCount = tapes.filter(t=>t.digitized).length;
     const safe = name.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
     const initials = name.slice(0,2).toUpperCase();
-    // Find first tape in this label that has artwork
-    const artTape = tapes.find(t => fixArtUrl(t.artwork));
-    const artUrl = artTape ? fixArtUrl(artTape.artwork) : '';
+    // Use label_logo field if set, else first tape artwork
+    const logoTape = tapes.find(t => t.label_logo && t.label_logo.trim());
+    const artTape  = !logoTape ? tapes.find(t => fixArtUrl(t.artwork)) : null;
+    const artUrl   = logoTape ? fixArtUrl(logoTape.label_logo) : (artTape ? fixArtUrl(artTape.artwork) : '');
     const imgHtml = artUrl
       ? `<img src="${artUrl}" alt="" loading="lazy" onerror="this.style.display='none';this.nextSibling.style.display='flex'">`
         + `<div class="artist-placeholder" style="display:none">${initials}</div>`
@@ -2210,6 +2268,9 @@ function renderLabelGrid(lmap, labels, letter) {
 
 function showLabel(labelName) {
   _savedScrollPosLabel = window.scrollY || document.documentElement.scrollTop;
+  sessionStorage.setItem('col_sub_mode', 'label_detail');
+  sessionStorage.setItem('col_sub_label', labelName);
+  sessionStorage.setItem('scroll_collection', String(_savedScrollPosLabel));
   const tapes = ALL_TAPES.filter(t =>
     (t.label||'').trim() === labelName || (!t.label && labelName === 'Unknown')
   );
@@ -2228,6 +2289,8 @@ function showLabel(labelName) {
 function showLabelList() {
   document.getElementById('col-label-artists-view').style.display = 'none';
   document.getElementById('col-label-list-view').style.display = '';
+  sessionStorage.removeItem('col_sub_mode');
+  sessionStorage.removeItem('col_sub_label');
   requestAnimationFrame(() => window.scrollTo(0, _savedScrollPosLabel || 0));
 }
 
@@ -2235,6 +2298,9 @@ function showLabelList() {
 function showArtist(name) {
   // Save scroll position before leaving artist grid
   _savedScrollPos = window.scrollY || document.documentElement.scrollTop;
+  sessionStorage.setItem('col_sub_mode', 'artist_detail');
+  sessionStorage.setItem('col_sub_artist', name);
+  sessionStorage.setItem('scroll_collection', String(_savedScrollPos));
   const tapes = ALL_TAPES.filter(t => t.artist === name);
   document.getElementById('col-detail-sub').textContent = `${tapes.length} tape${tapes.length!==1?'s':''} · ${tapes.filter(t=>t.digitized).length} digitized`;
   document.getElementById('col-detail-grid').innerHTML = tapes.map(t => colTile(t)).join('');
@@ -2246,6 +2312,8 @@ function showArtist(name) {
 function showArtistList() {
   document.getElementById('col-detail-view').style.display = 'none';
   document.getElementById('col-artists-view').style.display = 'block';
+  sessionStorage.removeItem('col_sub_mode');
+  sessionStorage.removeItem('col_sub_artist');
   // Restore scroll position to where user was
   requestAnimationFrame(() => window.scrollTo(0, _savedScrollPos || 0));
 }
@@ -2717,6 +2785,8 @@ function showPage(id, btn) {
   if (btn) btn.classList.add('active');
   localStorage.setItem('active_page', id);
   if (id === 'admin') initAdminPage();
+  // Restore scroll position for this page
+  restoreScrollState(id);
 }
 
 // ═══════════════════════════════════════════════
@@ -2897,6 +2967,9 @@ window.addEventListener('DOMContentLoaded', async () => {
       if (data?.length && Date.now()-ts < 24*60*60*1000) {
         ALL_TAPES = data;
         renderDashboard(); renderCollection(); doSearch(); buildFilters();
+    if (localStorage.getItem('active_page') === 'collection') {
+      setTimeout(restoreCollectionState, 50);
+    }
         setStatus('ok', `✓ ${ALL_TAPES.length} tapes (cached) — tap Sync to refresh`);
       }
     }
@@ -3235,6 +3308,7 @@ async function saveTape() {
     'INSTAGRAM':        igUrl ? 'posted' : r('af_instagram_s'),
     'WEBARCHIVE':       waUrl ? 'posted' : r('af_webarchive_s'),
     'ART Work':         g('af_artwork'),
+    'Label Logo':       g('af_label_logo'),
     'YOUTUBE':          ytUrl||r('af_youtube_s'),
     'INSTAGRAM':        igUrl||r('af_instagram_s'),
     'WEBARCHIVE':       waUrl||r('af_webarchive_s'),
