@@ -1909,6 +1909,21 @@ function fixArtUrl(url) {
   return url;
 }
 
+
+// ── Audio URL normaliser ──
+function fixAudioUrl(url) {
+  if (!url) return '';
+  url = url.trim();
+  // GitHub blob → raw
+  const gh = url.match(/github\.com\/([^/]+\/[^/]+)\/blob\/(.+)/);
+  if (gh) return 'https://raw.githubusercontent.com/' + gh[1] + '/' + gh[2];
+  return url;
+}
+
+function isLarkUrl(url) {
+  return /larksuite\.com|larkoffice\.com|feishu\.cn|byteimg\.com|bytescm\.com/.test(url||'');
+}
+
 // ═══════════════════════════════════════════════
 // SEARCH
 // ═══════════════════════════════════════════════
@@ -1973,10 +1988,12 @@ function tapeCard(t, q='') {
   ].filter(Boolean).join('');
   const itA = (t.artist||'').replace(/'/g,"\\'");
   const itB = (t.album||'').replace(/'/g,"\\'");
-  const musicBtn = t.music ? `
-    <button class="col-tile-play" onclick="event.stopPropagation();openPlayer('${t.music.replace(/'/g,"\\'")}','${itA}','${itB}','${(fixArtUrl(t.artwork)||'').replace(/'/g,"\\'")}')">
+  const _murl = t.music ? fixAudioUrl(t.music) : '';
+  const _mlabel = _murl && isLarkUrl(_murl) ? 'Lark ↗' : 'Play';
+  const musicBtn = _murl ? `
+    <button class="col-tile-play" onclick="event.stopPropagation();openPlayer('${_murl.replace(/'/g,"\\'")}','${itA}','${itB}','${(fixArtUrl(t.artwork)||'').replace(/'/g,"\\'")}')">
       <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><polygon points="5,3 19,12 5,21"/></svg>
-      Play
+      ${_mlabel}
     </button>` : '';
   const ytmQuery = encodeURIComponent(`${t.artist||''} ${t.album||''}`.trim());
   const ytmBtn = (t.artist||t.album) ? `
@@ -2349,6 +2366,20 @@ function archiveId(url) {
 }
 
 async function openPlayer(url, artist, album, artUrl) {
+  if (!url) return;
+  // Lark/external links → open in new tab, no in-page player needed
+  if (/larksuite\.com|larkoffice\.com|feishu\.cn|byteimg\.com|bytescm\.com/.test(url)) {
+    window.open(url, '_blank', 'noopener'); return;
+  }
+  // YouTube / Spotify / SoundCloud → open in new tab
+  if (/youtube\.com|youtu\.be|spotify\.com|soundcloud\.com/.test(url)) {
+    window.open(url, '_blank', 'noopener'); return;
+  }
+  // Direct mp3/m4a file → open in new tab (simplest approach, works everywhere)
+  if (/\.(mp3|ogg|wav|m4a|flac|aac|opus)(\?.*)?$/i.test(url) && !/archive\.org/.test(url)) {
+    window.open(url, '_blank', 'noopener'); return;
+  }
+  // Archive.org → use in-page player (existing logic)
   const modal = document.getElementById('music-player-modal');
   modal.classList.add('open');
 
