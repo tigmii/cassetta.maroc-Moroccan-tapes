@@ -1079,6 +1079,36 @@ mark{background:#fef08a;color:#713f12;border-radius:2px;padding:0 1px}
   .plr-vol{display:none}
   .plr-now-progress{min-width:100%}
 }
+
+/* Lark panel */
+.plr-lark-panel{
+  display:flex;align-items:center;justify-content:space-between;gap:12px;flex-wrap:wrap;
+  background:#f0fff0;border:1.5px solid #c8e6c9;border-radius:12px;
+  padding:12px 16px;margin-bottom:20px;
+}
+.plr-lark-left{display:flex;align-items:center;gap:10px}
+.plr-lark-icon{font-size:22px}
+.plr-lark-title{font-size:13px;font-weight:700;color:#1a1a1a}
+.plr-lark-status{font-size:11px;color:#555;margin-top:1px}
+.plr-lark-right{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+.plr-lark-token{
+  padding:8px 12px;border:1.5px solid #c8e6c9;border-radius:8px;
+  font-size:12px;background:#fff;outline:none;width:220px;
+  transition:border-color .2s;
+}
+.plr-lark-token:focus{border-color:#23b202}
+.plr-lark-btn{
+  padding:8px 16px;background:#23b202;color:#fff;
+  border:none;border-radius:8px;font-size:12px;font-weight:700;
+  cursor:pointer;transition:background .15s;white-space:nowrap;
+}
+.plr-lark-btn:hover{background:#1a8c01}
+.plr-lark-link{font-size:11px;color:#23b202;text-decoration:none;white-space:nowrap;font-weight:600}
+.plr-lark-link:hover{text-decoration:underline}
+@media(max-width:600px){
+  .plr-lark-panel{flex-direction:column;align-items:flex-start}
+  .plr-lark-token{width:100%}
+}
 </style>
 </head>
 <body>
@@ -1350,6 +1380,25 @@ mark{background:#fef08a;color:#713f12;border-radius:2px;padding:0 1px}
       </div>
     </div>
 
+    <!-- Lark integration panel -->
+    <div class="plr-lark-panel">
+      <div class="plr-lark-left">
+        <span class="plr-lark-icon">☁️</span>
+        <div>
+          <div class="plr-lark-title">Lark Folder</div>
+          <div class="plr-lark-status" id="plr-lark-status">Enter your Lark user token to load files</div>
+        </div>
+      </div>
+      <div class="plr-lark-right">
+        <input class="plr-lark-token" id="plr-lark-token" type="password"
+          placeholder="Lark user_access_token"
+          value=""
+          oninput="larkSetToken(this.value)"/>
+        <button class="plr-lark-btn" onclick="larkLoadFolder()">Load Folder</button>
+        <a class="plr-lark-link" href="https://vjp1pmchzzmo.jp.larksuite.com/drive/folder/Re09fE7V4lvFCsdNycOjcnZYpUc" target="_blank" rel="noopener">Open in Lark ↗</a>
+      </div>
+    </div>
+
     <!-- Now playing bar -->
     <div class="plr-now" id="plr-now" style="display:none">
       <div class="plr-now-art" id="plr-now-art">♪</div>
@@ -1540,6 +1589,200 @@ mark{background:#fef08a;color:#713f12;border-radius:2px;padding:0 1px}
 
 <script>
 // ════════════════════════════════════════════════════
+// LARK API INTEGRATION
+// ════════════════════════════════════════════════════
+const LARK_FOLDER_TOKEN = 'Re09fE7V4lvFCsdNycOjcnZYpUc'; // your folder token
+const LARK_BASE_URL     = 'https://open.larksuite.com/open-apis';
+
+let _larkAccessToken = localStorage.getItem('lark_access_token') || '';
+let _larkFolderFiles = []; // cached file list from Lark folder
+
+// ── Save/load Lark token ──
+function larkSetToken(token) {
+  _larkAccessToken = token.trim();
+  localStorage.setItem('lark_access_token', _larkAccessToken);
+}
+
+// ── Fetch file list from Lark folder ──
+async function larkListFolder(folderToken) {
+  if (!_larkAccessToken) return null;
+  try {
+    const res = await fetch(
+      `${LARK_BASE_URL}/drive/v1/files?folder_token=${folderToken}&page_size=200`,
+      { headers: { 'Authorization': 'Bearer ' + _larkAccessToken } }
+    );
+    const data = await res.json();
+    if (data.code !== 0) throw new Error(data.msg || 'Lark API error');
+    return data.data?.files || [];
+  } catch(e) {
+    console.error('Lark folder error:', e);
+    return null;
+  }
+}
+
+// ── Get download URL for a file token ──
+async function larkGetDownloadUrl(fileToken) {
+  if (!_larkAccessToken) return null;
+  try {
+    const res = await fetch(
+      `${LARK_BASE_URL}/drive/v1/medias/${fileToken}/download`,
+      {
+        method: 'GET',
+        headers: { 'Authorization': 'Bearer ' + _larkAccessToken },
+        redirect: 'manual'
+      }
+    );
+    // Lark returns a redirect to the actual CDN URL
+    const location = res.headers.get('Location');
+    if (location) return location;
+    // Or check response URL
+    if (res.url && res.url !== `${LARK_BASE_URL}/drive/v1/medias/${fileToken}/download`) return res.url;
+    return null;
+  } catch(e) {
+    console.error('Lark download url error:', e);
+    return null;
+  }
+}
+
+// ── Load Lark folder into player ──
+async function larkLoadFolder() {
+  const statusEl = document.getElementById('plr-lark-status');
+  if (statusEl) statusEl.textContent = '↻ Loading Lark folder…';
+
+  const files = await larkListFolder(LARK_FOLDER_TOKEN);
+  if (!files) {
+    if (statusEl) statusEl.textContent = '⚠ Token needed or invalid. Paste your Lark user token below.';
+    return;
+  }
+
+  // Filter audio files
+  const audioFiles = files.filter(f => /\.mp3|\.m4a|\.wav|\.ogg|\.flac/i.test(f.name||'') || f.type === 'file');
+  _larkFolderFiles = audioFiles;
+
+  if (statusEl) statusEl.textContent = `✅ ${audioFiles.length} files found in Lark folder`;
+
+  // Merge with ALL_TAPES by matching name to artist/album
+  renderPlrListWithLark();
+}
+
+function renderPlrListWithLark() {
+  // Show Lark files that match tapes OR show all files
+  const el = document.getElementById('plr-list');
+  if (!el) return;
+
+  // Build combined list: tapes with music URLs + unmatched Lark files
+  const larkItems = _larkFolderFiles.map((f, i) => ({
+    name: f.name,
+    token: f.token,
+    larkFile: true,
+    ref: '',
+    artist: f.name.replace(/\.[^.]+$/, ''),
+    album: '',
+    artwork: '',
+    music: '',
+    _larkIdx: i,
+  }));
+
+  const combined = [..._plrFiltered, ...larkItems.filter(lf =>
+    !_plrFiltered.some(t => t.music && t.music.includes(lf.token))
+  )];
+
+  if (!combined.length) {
+    el.innerHTML = '<div class="plr-empty">No tapes found.</div>';
+    return;
+  }
+
+  el.innerHTML = combined.map((t, i) => {
+    const artUrl = fixArtUrl(t.artwork);
+    const initials = (t.artist||'?').split(/\s+/).map(w=>w[0]).join('').toUpperCase().slice(0,2);
+    const imgHtml = artUrl
+      ? `<img src="${artUrl}" alt="" loading="lazy" style="width:100%;height:100%;object-fit:cover" onerror="this.style.display='none'">`
+      : `<div style="width:100%;height:100%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:800;color:#bbb">${initials}</div>`;
+    const isPlaying = i === _plrIdx;
+    const numHtml = isPlaying
+      ? `<span class="plr-eq"><span style="--d:.3s"></span><span style="--d:.5s"></span><span style="--d:.4s"></span><span style="--d:.6s"></span></span>`
+      : `<span style="color:#bbb">${i+1}</span>`;
+    const larkBadge = t.larkFile ? '<span class="plr-tag" style="background:#e8f5e9;color:#23b202">Lark</span>' : '';
+    return `<div class="plr-item${isPlaying?' playing':''}" id="plr-item-${i}" onclick="plrPlayItem(${i}, ${JSON.stringify(t.token||'')}, ${!!t.larkFile})">
+      <div class="plr-item-num">${numHtml}</div>
+      <div class="plr-item-art">${imgHtml}</div>
+      <div class="plr-item-info">
+        <div class="plr-item-artist">${esc(t.artist||'Unknown')}</div>
+        <div class="plr-item-album">${esc(t.album||t.name||'—')}</div>
+        <div class="plr-item-tags">${larkBadge}</div>
+      </div>
+      <button class="plr-item-play" onclick="event.stopPropagation();plrPlayItem(${i}, ${JSON.stringify(t.token||'')}, ${!!t.larkFile})" title="Play">
+        ${isPlaying && !_plrPaused ? '⏸' : '▶'}
+      </button>
+    </div>`;
+  }).join('');
+}
+
+// ── Play a Lark file (resolve download URL first) ──
+async function plrPlayItem(i, fileToken, isLark) {
+  if (!isLark) { plrPlay(i); return; }
+  if (!_larkAccessToken) {
+    alert('Please enter your Lark token to play files from Lark.');
+    return;
+  }
+
+  _plrIdx = i;
+  _plrPaused = false;
+  const t = (_plrFiltered.length > i) ? _plrFiltered[i] : _larkFolderFiles[i - _plrFiltered.length];
+
+  document.getElementById('plr-now').style.display = 'flex';
+  document.getElementById('plr-now-title').textContent = t.album || t.name || '—';
+  document.getElementById('plr-now-artist').textContent = (t.artist||'—') + ' · Resolving Lark URL…';
+  document.getElementById('plr-playpause').textContent = '↻';
+
+  const url = await larkGetDownloadUrl(fileToken);
+  if (!url) {
+    document.getElementById('plr-now-artist').textContent = '⚠ Could not get download URL. Check token.';
+    return;
+  }
+
+  // Now play via direct URL
+  document.getElementById('plr-now-artist').textContent = t.artist || '—';
+  plrPlayUrl(url, t, i);
+}
+
+// ── Core: play from a resolved URL ──
+function plrPlayUrl(url, tape, i) {
+  if (_plrAudio) { _plrAudio.pause(); cancelAnimationFrame(_plrRAF); _plrAudio = null; }
+
+  const artUrl = fixArtUrl(tape.artwork||'');
+  const nowArt = document.getElementById('plr-now-art');
+  nowArt.innerHTML = artUrl
+    ? `<img src="${artUrl}" alt="" style="width:100%;height:100%;object-fit:cover" onerror="this.parentNode.textContent='♪'">`
+    : '♪';
+
+  document.getElementById('plr-prog-fill').style.width = '0%';
+  document.getElementById('plr-cur').textContent = '0:00';
+  document.getElementById('plr-dur').textContent = '—';
+  document.getElementById('plr-playpause').textContent = '⏸';
+
+  const audio = new Audio();
+  audio.crossOrigin = 'anonymous';
+  audio.volume = parseFloat(document.getElementById('plr-vol')?.value||'0.8');
+  _plrAudio = audio;
+  _plrIdx = i;
+
+  audio.addEventListener('loadedmetadata', () => { document.getElementById('plr-dur').textContent = fmtTime(audio.duration); });
+  audio.addEventListener('play', () => { document.getElementById('plr-playpause').textContent = '⏸'; _plrPaused=false; plrTick(); renderPlrListWithLark(); });
+  audio.addEventListener('pause', () => { document.getElementById('plr-playpause').textContent = '▶'; _plrPaused=true; cancelAnimationFrame(_plrRAF); renderPlrListWithLark(); });
+  audio.addEventListener('ended', () => { cancelAnimationFrame(_plrRAF); plrNext(); });
+  audio.addEventListener('error', () => { document.getElementById('plr-now-title').textContent = '⚠ Could not load · '+(tape.album||tape.name||'—'); });
+
+  audio.src = url;
+  audio.load();
+  audio.play().catch(()=>{ document.getElementById('plr-playpause').textContent='▶'; });
+
+  renderPlrListWithLark();
+  setTimeout(()=>{ const el=document.getElementById('plr-item-'+i); if(el) el.scrollIntoView({behavior:'smooth',block:'nearest'}); },100);
+}
+
+
+// ════════════════════════════════════════════════════
 // PLAYER PAGE
 // ════════════════════════════════════════════════════
 let _plrTapes    = [];   // all playable tapes (have music URL)
@@ -1550,6 +1793,9 @@ let _plrRAF      = null;
 let _plrPaused   = false;
 
 function initPlayerPage() {
+  // Restore saved Lark token to input
+  const tokenInput = document.getElementById('plr-lark-token');
+  if (tokenInput && _larkAccessToken) tokenInput.value = _larkAccessToken;
   // Build tape list: tapes that have a music URL
   _plrTapes = ALL_TAPES.filter(t => t.music && t.music.trim());
   _plrFiltered = _plrTapes.slice();
