@@ -1601,10 +1601,8 @@ async function playTapePreview(artist, album, artUrl) {
     const results = (data.results || []).filter(r => r.previewUrl);
 
     if (!results.length) {
-      document.getElementById('mini-artist').textContent = (artist||'—') + ' · No preview available';
-      document.getElementById('mini-play-btn').textContent = '▶';
-      // Open Apple Music search as fallback
-      window.open('https://music.apple.com/search?term=' + q, '_blank', 'noopener');
+      document.getElementById('mini-artist').textContent = (artist||'—') + ' · No preview available on Apple Music';
+      document.getElementById('mini-play-btn').textContent = '✕';
       return;
     }
 
@@ -1620,8 +1618,8 @@ async function playTapePreview(artist, album, artUrl) {
     miniPlay(0);
 
   } catch(e) {
-    document.getElementById('mini-artist').textContent = (artist||'—') + ' · Preview failed';
-    document.getElementById('mini-play-btn').textContent = '▶';
+    document.getElementById('mini-artist').textContent = (artist||'—') + ' · Preview not available';
+    document.getElementById('mini-play-btn').textContent = '✕';
   }
 }
 
