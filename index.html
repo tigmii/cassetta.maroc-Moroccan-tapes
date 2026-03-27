@@ -1005,6 +1005,61 @@ mark{background:#fef08a;color:#713f12;border-radius:2px;padding:0 1px}
 
 /* Label card artwork */
 .label-img img{width:100%;height:100%;object-fit:cover;display:block}
+
+/* ── MINI PLAYER ── */
+.mini-player{
+  position:fixed;bottom:0;left:0;right:0;z-index:300;
+  background:#fff;border-top:1px solid #e5e5e5;
+  box-shadow:0 -4px 20px rgba(0,0,0,.1);
+  display:flex;align-items:center;gap:10px;
+  padding:10px 16px;height:64px;
+}
+.mini-art{
+  width:42px;height:42px;border-radius:8px;flex-shrink:0;
+  background:#f0f0f0;display:flex;align-items:center;justify-content:center;
+  font-size:18px;overflow:hidden;
+}
+.mini-art img{width:100%;height:100%;object-fit:cover;display:block}
+.mini-info{flex:1;min-width:0}
+.mini-title{font-size:12px;font-weight:700;color:#1a1a1a;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mini-artist{font-size:11px;color:#888;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mini-controls{display:flex;align-items:center;gap:2px;flex-shrink:0}
+.mini-btn{background:none;border:none;font-size:16px;cursor:pointer;
+  color:#555;padding:4px;border-radius:6px;transition:color .15s}
+.mini-btn:hover{color:#23b202}
+.mini-play{font-size:20px;color:#23b202}
+.mini-progress-wrap{flex:1;min-width:80px;max-width:300px}
+.mini-progress{height:4px;background:#eee;border-radius:2px;
+  cursor:pointer;position:relative;margin-bottom:3px}
+.mini-fill{height:100%;background:#23b202;border-radius:2px;width:0%;
+  transition:width .1s linear;pointer-events:none}
+.mini-times{display:flex;justify-content:space-between;
+  font-size:9px;color:#bbb}
+.mini-vol{width:60px;accent-color:#23b202;cursor:pointer;flex-shrink:0}
+.mini-close{background:none;border:none;color:#bbb;font-size:14px;
+  cursor:pointer;padding:4px;flex-shrink:0;border-radius:6px}
+.mini-close:hover{color:#555}
+/* Push page content up when mini player visible */
+body.has-miniplayer .page-wrap{padding-bottom:80px}
+body.has-miniplayer{padding-bottom:64px}
+@media(max-width:480px){
+  .mini-vol{display:none}
+  .mini-progress-wrap{max-width:120px}
+}
+
+/* Collection tile Apple Music preview btn */
+.tile-am-btn{
+  margin-top:6px;padding:4px 10px;
+  background:rgba(255,255,255,.18);color:#fff;
+  border:1px solid rgba(255,255,255,.4);border-radius:20px;
+  font-size:10px;font-weight:700;cursor:pointer;
+  transition:background .15s;
+}
+.tile-am-btn:hover{background:rgba(255,255,255,.3)}
+/* Change col-tile-am to button style */
+.col-tile-am{cursor:pointer}
 </style>
 </head>
 <body>
@@ -1420,6 +1475,156 @@ mark{background:#fef08a;color:#713f12;border-radius:2px;padding:0 1px}
 </div>
 
 <script>
+// ══════════════════════════════════════════════════
+// MINI PLAYER — in-page audio player
+// ══════════════════════════════════════════════════
+let _miniAudio   = null;
+let _miniRAF     = null;
+let _miniQueue   = [];   // [{title, artist, url, art}]
+let _miniIdx     = -1;
+let _miniPaused  = false;
+
+function miniPlay(idx) {
+  if (idx < 0 || idx >= _miniQueue.length) return;
+  _miniIdx = idx;
+  const track = _miniQueue[idx];
+
+  // Show bar
+  const bar = document.getElementById('mini-player');
+  bar.style.display = 'flex';
+  document.body.classList.add('has-miniplayer');
+
+  // Fill info
+  document.getElementById('mini-title').textContent = track.title || '—';
+  document.getElementById('mini-artist').textContent = track.artist || '—';
+  document.getElementById('mini-fill').style.width = '0%';
+  document.getElementById('mini-cur').textContent = '0:00';
+  document.getElementById('mini-dur').textContent = '—';
+  document.getElementById('mini-play-btn').textContent = '⏸';
+
+  // Art
+  const artEl = document.getElementById('mini-art');
+  artEl.innerHTML = track.art
+    ? `<img src="${track.art}" alt="" onerror="this.parentNode.innerHTML='♪'" style="width:100%;height:100%;object-fit:cover">`
+    : '♪';
+
+  // Stop old
+  if (_miniAudio) { _miniAudio.pause(); cancelAnimationFrame(_miniRAF); _miniAudio = null; }
+  _miniPaused = false;
+
+  const audio = new Audio(track.url);
+  audio.crossOrigin = 'anonymous';
+  audio.volume = parseFloat(document.getElementById('mini-vol')?.value || '0.8');
+  _miniAudio = audio;
+
+  audio.addEventListener('loadedmetadata', () => {
+    document.getElementById('mini-dur').textContent = fmtTime(audio.duration);
+  });
+  audio.addEventListener('play', () => {
+    document.getElementById('mini-play-btn').textContent = '⏸';
+    _miniPaused = false; miniTick();
+  });
+  audio.addEventListener('pause', () => {
+    document.getElementById('mini-play-btn').textContent = '▶';
+    _miniPaused = true; cancelAnimationFrame(_miniRAF);
+  });
+  audio.addEventListener('ended', () => {
+    cancelAnimationFrame(_miniRAF); miniNext();
+  });
+  audio.addEventListener('error', () => {
+    document.getElementById('mini-title').textContent = '⚠ Could not play — ' + (track.title||'—');
+    document.getElementById('mini-play-btn').textContent = '▶';
+  });
+  audio.play().catch(() => { document.getElementById('mini-play-btn').textContent = '▶'; });
+}
+
+function miniToggle() {
+  if (!_miniAudio) return;
+  _miniAudio.paused ? _miniAudio.play().catch(()=>{}) : _miniAudio.pause();
+}
+function miniNext() {
+  if (_miniIdx + 1 < _miniQueue.length) miniPlay(_miniIdx + 1);
+}
+function miniPrev() {
+  if (_miniAudio && _miniAudio.currentTime > 3) { _miniAudio.currentTime = 0; return; }
+  if (_miniIdx > 0) miniPlay(_miniIdx - 1);
+}
+function miniSeek(e) {
+  if (!_miniAudio || !_miniAudio.duration) return;
+  const bar = e.currentTarget;
+  _miniAudio.currentTime = (e.offsetX / bar.offsetWidth) * _miniAudio.duration;
+}
+function miniSetVol(v) { if (_miniAudio) _miniAudio.volume = parseFloat(v); }
+function miniClose() {
+  if (_miniAudio) { _miniAudio.pause(); _miniAudio = null; }
+  cancelAnimationFrame(_miniRAF);
+  document.getElementById('mini-player').style.display = 'none';
+  document.body.classList.remove('has-miniplayer');
+  _miniQueue = []; _miniIdx = -1;
+}
+function miniTick() {
+  if (!_miniAudio) return;
+  const pct = _miniAudio.duration ? (_miniAudio.currentTime / _miniAudio.duration * 100) : 0;
+  const fill = document.getElementById('mini-fill');
+  const cur  = document.getElementById('mini-cur');
+  if (fill) fill.style.width = pct + '%';
+  if (cur)  cur.textContent  = fmtTime(_miniAudio.currentTime);
+  _miniRAF = requestAnimationFrame(miniTick);
+}
+
+// ── Play a tape from search/collection ──
+// Uses iTunes Search API to find a 30s preview
+async function playTapePreview(artist, album, artUrl) {
+  const q = encodeURIComponent((artist + ' ' + album).trim());
+  const statusKey = artist + album;
+
+  // Show player with loading state immediately
+  _miniQueue = [{ title: album||'—', artist: artist||'—', url: '', art: artUrl }];
+  _miniIdx = 0;
+  const bar = document.getElementById('mini-player');
+  bar.style.display = 'flex';
+  document.body.classList.add('has-miniplayer');
+  document.getElementById('mini-title').textContent = album || '—';
+  document.getElementById('mini-artist').textContent = (artist||'—') + ' · Searching…';
+  document.getElementById('mini-play-btn').textContent = '↻';
+  const artEl = document.getElementById('mini-art');
+  artEl.innerHTML = artUrl
+    ? `<img src="${artUrl}" alt="" style="width:100%;height:100%;object-fit:cover" onerror="this.parentNode.innerHTML='♪'">`
+    : '♪';
+
+  try {
+    // iTunes Search API — returns 30s previews (free, no auth needed)
+    const res = await fetch(
+      `https://itunes.apple.com/search?term=${q}&media=music&entity=song&limit=5`
+    );
+    const data = await res.json();
+    const results = (data.results || []).filter(r => r.previewUrl);
+
+    if (!results.length) {
+      document.getElementById('mini-artist').textContent = (artist||'—') + ' · No preview available';
+      document.getElementById('mini-play-btn').textContent = '▶';
+      // Open Apple Music search as fallback
+      window.open('https://music.apple.com/search?term=' + q, '_blank', 'noopener');
+      return;
+    }
+
+    // Build queue from results
+    _miniQueue = results.map(r => ({
+      title:  r.trackName  || album  || '—',
+      artist: r.artistName || artist || '—',
+      url:    r.previewUrl,
+      art:    r.artworkUrl100?.replace('100x100', '300x300') || artUrl || '',
+    }));
+
+    document.getElementById('mini-artist').textContent = _miniQueue[0].artist;
+    miniPlay(0);
+
+  } catch(e) {
+    document.getElementById('mini-artist').textContent = (artist||'—') + ' · Preview failed';
+    document.getElementById('mini-play-btn').textContent = '▶';
+  }
+}
+
 
 _savedScrollPos = 0;
 let _savedScrollPosLabel = 0;
@@ -1956,11 +2161,12 @@ function tapeCard(t, q='') {
       <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M21.582 6.186a2.506 2.506 0 0 0-1.768-1.768C18.254 4 12 4 12 4s-6.254 0-7.814.418a2.506 2.506 0 0 0-1.768 1.768C2 7.746 2 12 2 12s0 4.254.418 5.814a2.506 2.506 0 0 0 1.768 1.768C5.746 20 12 20 12 20s6.254 0 7.814-.418a2.506 2.506 0 0 0 1.768-1.768C22 16.254 22 12 22 12s0-4.254-.418-5.814zM10 15.464V8.536L15.818 12 10 15.464z"/></svg>
       YT Music
     </a>` : '';
+  const _art = fixArtUrl(t.artwork) || '';
   const amBtn = (t.artist||t.album) ? `
-    <a class="col-tile-am" href="https://music.apple.com/search?term=${searchQ}" target="_blank" rel="noopener" onclick="event.stopPropagation()">
+    <button class="col-tile-am" onclick="event.stopPropagation();playTapePreview('${(t.artist||'').replace(/'/g,"\\'")}','${(t.album||'').replace(/'/g,"\\'")}','${_art.replace(/'/g,"\\'")}')">
       <svg width="10" height="10" viewBox="0 0 24 24" fill="currentColor"><path d="M23.994 6.124a9.23 9.23 0 00-.24-2.19c-.317-1.31-1.062-2.31-2.18-3.043a5.022 5.022 0 00-1.877-.726 10.496 10.496 0 00-1.564-.15c-.04-.003-.083-.01-.124-.013H5.986c-.152.01-.303.017-.455.026C4.786.07 4.043.15 3.34.428 2.004.958 1.04 1.88.475 3.208a5.495 5.495 0 00-.36 1.548c-.06.532-.079 1.07-.084 1.605 0 .05-.01.1-.013.15v12.878c.01.152.017.305.026.457.042.727.169 1.435.46 2.103.54 1.235 1.432 2.116 2.684 2.621.636.249 1.299.352 1.976.399.249.017.498.024.747.03l.164.006h13.054c.174-.012.348-.02.522-.033.682-.05 1.349-.16 1.99-.41 1.317-.507 2.22-1.415 2.742-2.734.232-.576.35-1.18.392-1.8.033-.467.046-.936.048-1.404V6.124zm-7.397 6.485c-.016-.73.287-1.417.876-1.952a4.1 4.1 0 00-.573-.53c-.47-.36-1.025-.57-1.618-.59-.716-.027-1.395.27-1.957.547-.446.22-.697.222-1.135.003-.56-.276-1.245-.572-1.96-.54-.916.047-1.73.534-2.205 1.31a4.5 4.5 0 00-.608 2.296c-.016 1.404.516 2.836 1.23 3.995.35.565.757 1.055 1.23 1.41.465.35 1.017.55 1.615.548.655-.003 1.195-.239 1.73-.474.398-.177.74-.177 1.138 0 .536.235 1.074.471 1.728.471.598 0 1.15-.2 1.617-.547.485-.363.905-.87 1.262-1.453.194-.31.367-.648.52-1.01a4.087 4.087 0 01-1.89-3.484zM14.29 6.05a3.478 3.478 0 01-2.495 1.077 3.582 3.582 0 011.003-2.582 3.594 3.594 0 012.486-1.077c.035.97-.306 1.893-1 2.582z"/></svg>
-      Apple Music
-    </a>` : '';
+      ♪ Preview
+    </button>` : '';
   return `
     <div class="tape-card">
       <div class="tape-num">#${t.ref}</div>
@@ -2314,6 +2520,9 @@ function colTile(t) {
           <div class="tile-ref">#${t.ref}</div>
           <div class="tile-title">${esc(t.album||'—')}</div>
           ${playBtn}
+          <button class="tile-am-btn" onclick="event.stopPropagation();playTapePreview('${safe_a}','${safe_b}','${safe_art}')">
+            ♪ Preview
+          </button>
         </div>
       </div>
     </div>`;
@@ -3405,5 +3614,31 @@ function restoreCollectionState() {
 
 
 </script>
+
+<!-- ── MINI PLAYER BAR (persistent bottom) ── -->
+<div id="mini-player" class="mini-player" style="display:none">
+  <div class="mini-art" id="mini-art">♪</div>
+  <div class="mini-info">
+    <div class="mini-title" id="mini-title">—</div>
+    <div class="mini-artist" id="mini-artist">—</div>
+  </div>
+  <div class="mini-controls">
+    <button class="mini-btn" onclick="miniPrev()" title="Previous">⏮</button>
+    <button class="mini-btn mini-play" id="mini-play-btn" onclick="miniToggle()">▶</button>
+    <button class="mini-btn" onclick="miniNext()" title="Next">⏭</button>
+  </div>
+  <div class="mini-progress-wrap">
+    <div class="mini-progress" onclick="miniSeek(event)">
+      <div class="mini-fill" id="mini-fill"></div>
+    </div>
+    <div class="mini-times">
+      <span id="mini-cur">0:00</span>
+      <span id="mini-dur">—</span>
+    </div>
+  </div>
+  <input class="mini-vol" type="range" min="0" max="1" step="0.05" value="0.8" oninput="miniSetVol(this.value)" title="Volume"/>
+  <button class="mini-close" onclick="miniClose()" title="Close">✕</button>
+</div>
+
 </body>
 </html>
