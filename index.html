@@ -289,7 +289,6 @@ nav#masthead.hidden{display:none}
 .tag-genre{background:#eff6ff;color:#1d4ed8}
 .tag-yt{background:#fef2f2;color:#dc2626}
 .tag-ig{background:#fdf4ff;color:#7c3aed}
-.tag-wa{background:#ecfeff;color:#0891b2}
 .tag-nodig{background:#f4f4f4;color:#aaa}
 .col-tile-play{display:none!important}
 .col-tile-ytm{display:none!important}
@@ -1287,7 +1286,6 @@ nav#masthead.hidden{display:none}
 .tag-genre{background:#eff6ff;color:#1d4ed8}
 .tag-yt{background:#fef2f2;color:#dc2626}
 .tag-ig{background:#fdf4ff;color:#7c3aed}
-.tag-wa{background:#ecfeff;color:#0891b2}
 .tag-nodig{background:#f4f4f4;color:#aaa}
 .col-tile-play{display:none!important}
 .col-tile-ytm{display:none!important}
@@ -2251,8 +2249,7 @@ mark{background:#fef08a;color:#713f12;border-radius:2px;padding:0 1px}
           <div class="fp-options" id="fp-platform">
             <label class="fp-opt"><input type="checkbox" value="youtube" onchange="applyPanelFilters()"><span>YouTube</span></label>
             <label class="fp-opt"><input type="checkbox" value="instagram" onchange="applyPanelFilters()"><span>Instagram</span></label>
-            <label class="fp-opt"><input type="checkbox" value="webarchive" onchange="applyPanelFilters()"><span>Web Archive</span></label>
-          </div>
+              </div>
         </div>
         <div class="fp-full">
           <div class="fp-label">Genre</div>
@@ -3192,7 +3189,6 @@ function normalise(r, i) {
     cover:     isYes(get(r,'Cover','COVER_SCAN','Cover Scan','COVER SCAN','Couverture')),
     youtube:   isPosted(get(r,'YouTube','Youtube','YOUTUBE')),
     instagram: isPosted(get(r,'Instagram','INSTAGRAM')),
-    webarchive:isPosted(get(r,'WebArchive','Web Archive','WEBARCHIVE','Archive')),
     mainGenre: mg(get(r,'Genre','Genre_Category','Genre / Category','GENRE','Style')),
     artwork:   _artKey ? (r[_artKey]||'').trim() : '',
     date:      get(r,'dates','date','Date','Dates','DATE','date added','Date Added','created','Created').trim(),
@@ -3263,7 +3259,7 @@ function doSearch() {
       if (panelFilters.status.has('digitized')   && t.digitized) return true;
       if (panelFilters.status.has('not_dig')      && !t.digitized) return true;
       if (panelFilters.status.has('cover')        && t.cover) return true;
-      if (panelFilters.status.has('not_started')  && !t.digitized&&!t.cover&&!t.youtube&&!t.instagram&&!t.webarchive) return true;
+      if (panelFilters.status.has('not_started')  && !t.digitized&&!t.cover&&!t.youtube&&!t.instagram) return true;
       return false;
     });
   }
@@ -3271,7 +3267,6 @@ function doSearch() {
     results = results.filter(t => {
       if (panelFilters.platform.has('youtube')    && t.youtube) return true;
       if (panelFilters.platform.has('instagram')  && t.instagram) return true;
-      if (panelFilters.platform.has('webarchive') && t.webarchive) return true;
       return false;
     });
   }
@@ -3311,7 +3306,6 @@ function tapeCard(t, q='') {
     t.mainGenre  ? `<span class="tag tag-genre">${esc(t.mainGenre)}</span>` : '',
     t.youtube    ? `<span class="tag tag-yt">YT</span>` : '',
     t.instagram  ? `<span class="tag tag-ig">IG</span>` : '',
-    t.webarchive ? `<span class="tag tag-wa">Archive</span>` : '',
   ].filter(Boolean).join('');
   const itA = (t.artist||'').replace(/'/g,"\\'");
   const itB = (t.album||'').replace(/'/g,"\\'");
@@ -3369,7 +3363,7 @@ function applyPanelFilters() {
   updateChips(); doSearch();
 }
 
-const FL = { digitized:'Digitized', not_dig:'Not Digitized', cover:'Cover Scanned', not_started:'Not Started', youtube:'YouTube', instagram:'Instagram', webarchive:'Web Archive' };
+const FL = { digitized:'Digitized', not_dig:'Not Digitized', cover:'Cover Scanned', not_started:'Not Started', youtube:'YouTube', instagram:'Instagram' };
 
 function updateChips() {
   const all = [...panelFilters.status,...panelFilters.platform,...panelFilters.genre];
@@ -3924,8 +3918,8 @@ const COLS=['#22c55e','#60a5fa','#a78bfa','#22d3ee','#fb923c','#f472b6','#facc15
 function renderDashboard() {
   const T = ALL_TAPES;
   const total=T.length, dig=T.filter(t=>t.digitized).length, cov=T.filter(t=>t.cover).length;
-  const yt=T.filter(t=>t.youtube).length, ig=T.filter(t=>t.instagram).length, wa=T.filter(t=>t.webarchive).length;
-  const ns=T.filter(t=>!t.digitized&&!t.cover&&!t.youtube&&!t.instagram&&!t.webarchive).length;
+  const yt=T.filter(t=>t.youtube).length, ig=T.filter(t=>t.instagram).length;
+  const ns=T.filter(t=>!t.digitized&&!t.cover&&!t.youtube&&!t.instagram).length;
   const pct=total?Math.round(dig/total*100):0;
 
   document.getElementById('kpi-grid').innerHTML = [
@@ -3935,7 +3929,6 @@ function renderDashboard() {
     {l:'Not Started',  v:ns,       s:`${p_(ns,total)}% remain`,c:'var(--red)'},
     {l:'YouTube',      v:yt,       s:'published',              c:'var(--red)'},
     {l:'Instagram',    v:ig,       s:'published',              c:'var(--pur)'},
-    {l:'WebArchive',   v:wa,       s:'archived',               c:'var(--tel)'},
     {l:'Published',    v:yt+ig+wa, s:'total across platforms', c:'var(--org)'},
   ].map(k=>`<div class="kpi" style="--kc:${k.c}"><div class="kpi-lbl">${k.l}</div><div class="kpi-val">${k.v}</div><div class="kpi-sub">${k.s}</div></div>`).join('');
 
@@ -3955,7 +3948,7 @@ function renderDashboard() {
   drawDonut(segs, total, pct);
 
   document.getElementById('plat-bars').innerHTML=[
-    {n:'YouTube',v:yt,c:'#f87171'},{n:'Instagram',v:ig,c:'#a78bfa'},{n:'WebArchive',v:wa,c:'#22d3ee'},
+    {n:'YouTube',v:yt,c:'#f87171'},{n:'Instagram',v:ig,c:'#a78bfa'},
   ].map(p=>bRow(p.n,p.v,total,p.c,80)).join('');
 
   const gmap={};
@@ -4597,7 +4590,6 @@ function openAdminForm(ref) {
       <div class="af-field"><label>Digitized</label>${yn('af_digitized', fget(t,'Digitized'))}</div>
       <div class="af-field"><label>YOUTUBE</label>${np('af_youtube_s', fget(t,'YOUTUBE','Youtube'))}</div>
       <div class="af-field"><label>INSTAGRAM</label>${np('af_instagram_s', fget(t,'INSTAGRAM','Instagram'))}</div>
-      <div class="af-field"><label>WEBARCHIVE</label>${np('af_webarchive_s', fget(t,'WEBARCHIVE','WebArchive'))}</div>
     </div>
   </div>
 
@@ -4605,9 +4597,6 @@ function openAdminForm(ref) {
     <div class="af-grid">
       <div class="af-field af-full"><label>ART Work URL</label>
         <input id="af_artwork" type="text" value="${esc(fget(t,'ART Work','ArtWork','artwork'))}" placeholder="https://raw.githubusercontent.com/…"/>
-      </div>
-      <div class="af-field af-full"><label>WEBARCHIVE URL</label>
-        <input id="af_webarchive_url" type="text" value="${esc(fget(t,'WEBARCHIVE','WebArchive'))}" placeholder="https://archive.org/details/…"/>
       </div>
       <div class="af-field af-full"><label>Music (Archive.org)</label>
         <input id="af_music" type="text" value="${esc(fget(t,'music','Music'))}" placeholder="https://archive.org/details/…"/>
@@ -4656,7 +4645,6 @@ async function saveTape() {
   // For status fields: if URL filled → use "posted", else use toggle value
   const ytUrl  = g('af_youtube_url');
   const igUrl  = g('af_instagram_url');
-  const waUrl  = g('af_webarchive_url');
 
   const data = {
     'Artist':           g('af_artist'),
@@ -4667,12 +4655,10 @@ async function saveTape() {
     'Digitized':        r('af_digitized'),
     'YOUTUBE':          ytUrl ? 'posted' : r('af_youtube_s'),
     'INSTAGRAM':        igUrl ? 'posted' : r('af_instagram_s'),
-    'WEBARCHIVE':       waUrl ? 'posted' : r('af_webarchive_s'),
     'ART Work':         g('af_artwork'),
     'Label Logo':       g('af_label_logo'),
     'YOUTUBE':          ytUrl||r('af_youtube_s'),
     'INSTAGRAM':        igUrl||r('af_instagram_s'),
-    'WEBARCHIVE':       waUrl||r('af_webarchive_s'),
     'music':            g('af_music'),
   };
 
